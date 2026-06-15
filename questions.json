@@ -1,919 +1,1788 @@
 [
   {
-    "id": "Q1",
-    "text": "Section #0 - Multiplier.\nThe multiplier is a value which impacts your overall score, to reflect the number of people impacted by your system.\nTo continue, type 'Ok'",
-    "answers": {
-      "Ok": {
-        "text": "Ok",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q2"
-      }
-    }
-  },
-  {
-    "id": "Q2",
-    "text": "How large is the target cohort for your decision system?\nThese are the people your system makes decisions, predictions or classifications about. Include the entire population, not the subset of people who might receive an unfavorable or harmful result.",
+    "id": "Q-cohort_size",
+    "section": "calibration",
+    "tags": ["scale", "cohort"],
+    "text": "How large is the target cohort for your decision system?\nInclude the entire population your system makes decisions, predictions, or classifications about — not just those who might receive an unfavourable outcome.",
+    "gating": null,
+    "weight_tier": "n/a",
+    "preferred_modality": "buttons",
     "answers": {
       "A": {
         "text": "1-100",
-        "multiplier": 0.52,        
-        "recommendation": "",
-        "nextq": "Q3"
+        "multiplier": 0.5,
+        "nextq": "Q-cohort_fit",
+        "recommendation": null
       },
       "B": {
         "text": "101-1,000",
-        "multiplier": 0.75,        
-        "recommendation": "",
-        "nextq": "Q3"
+        "multiplier": 0.7,
+        "nextq": "Q-cohort_fit",
+        "recommendation": null
       },
       "C": {
         "text": "1,001-10,000",
-        "multiplier": 0.85,        
-        "recommendation": "Try it with fewer people, first.\nYou could trial your system with a small target cohort (Beta release). Communicate extensively with the cohort. Observe what goes wrong. Be prepared to stop or intervene if things are going badly. You could also consider a staged roll-out of your system - break down your release rather than doing it all at once. Provide sufficient time between roll-out milestones to adjust and course-correct if unexpected issue crop up.",
-        "nextq": "Q3"
+        "multiplier": 0.85,
+        "nextq": "Q-cohort_fit",
+        "recommendation": {
+          "tradeoff": "Reaching more people vs. exposing more people to potential harm",
+          "considerations": "Consider trialling with a smaller cohort first (beta release). Communicate extensively with the cohort. Observe what goes wrong. Be prepared to stop or intervene if things go badly. Consider a staged roll-out rather than full release — provide time between milestones to course-correct.",
+          "references": []
+        }
       },
       "D": {
         "text": "10,001-100,000",
-        "multiplier": 0.95,
-        "recommendation": "Try it with fewer people, first.\nYou could trial your system with a small target cohort (Beta release). Communicate extensively with the cohort. Observe what goes wrong. Be prepared to stop or intervene if things are going badly. You could also consider a staged roll-out of your system - break down your release rather than doing it all at once. Provide sufficient time between roll-out milestones to adjust and course-correct if unexpected issue crop up.",
-        "nextq": "Q3"
+        "multiplier": 1.0,
+        "nextq": "Q-cohort_fit",
+        "recommendation": {
+          "tradeoff": "Reaching more people vs. exposing more people to potential harm",
+          "considerations": "At this scale, errors and harms compound quickly. Consider trialling with a smaller cohort first. A staged roll-out with monitoring between stages will help you catch issues before they affect everyone. Be ready to roll back.",
+          "references": []
+        }
       },
       "E": {
         "text": "100,001-1,000,000",
-        "multiplier": 0.96,        
-        "recommendation": "Try it with fewer people, first.\nYou could trial your system with a small target cohort (Beta release). Communicate extensively with the cohort. Observe what goes wrong. Be prepared to stop or intervene if things are going badly. You could also consider a staged roll-out of your system - break down your release rather than doing it all at once. Provide sufficient time between roll-out milestones to adjust and course-correct if unexpected issue crop up.",
-        "nextq": "Q3"
+        "multiplier": 1.15,
+        "nextq": "Q-cohort_fit",
+        "recommendation": {
+          "tradeoff": "Reaching more people vs. exposing more people to potential harm at scale",
+          "considerations": "Harm at this scale is hard to reverse and hard to compensate. A staged roll-out is essential. Invest in monitoring and feedback channels. Consider whether you need third-party oversight or external auditing before broad release.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"}
+          ]
+        }
       },
       "F": {
         "text": "1,000,001-10,000,000",
-        "multiplier": 0.98,
-        "recommendation": "Try it with fewer people, first.\nYou could trial your system with a small target cohort (Beta release). Communicate extensively with the cohort. Observe what goes wrong. Be prepared to stop or intervene if things are going badly. You could also consider a staged roll-out of your system - break down your release rather than doing it all at once. Provide sufficient time between roll-out milestones to adjust and course-correct if unexpected issue crop up.",
-        "nextq": "Q3"
+        "multiplier": 1.3,
+        "nextq": "Q-cohort_fit",
+        "recommendation": {
+          "tradeoff": "Reaching more people vs. exposing more people to potential systemic harm",
+          "considerations": "At this scale, your system shapes how a substantial population interacts with whatever domain you're operating in. Treat deployment as a regulatable event. External audits, transparency reports, and ongoing red-teaming are appropriate.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"},
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
       },
       "G": {
         "text": "10 million +",
-        "multiplier": 1.0,
-        "recommendation": "Try it with fewer people, first.\nYou could trial your system with a small target cohort (Beta release). Communicate extensively with the cohort. Observe what goes wrong. Be prepared to stop or intervene if things are going badly. You could also consider a staged roll-out of your system - break down your release rather than doing it all at once. Provide sufficient time between roll-out milestones to adjust and course-correct if unexpected issue crop up.",
-        "nextq": "Q3"
+        "multiplier": 1.5,
+        "nextq": "Q-cohort_fit",
+        "recommendation": {
+          "tradeoff": "Reaching everyone vs. exposing everyone to potential systemic harm",
+          "considerations": "At population scale, your system is infrastructure. Failures become public events. The bar for safety, transparency, and accountability is the highest possible. Consider whether you should be operating this system at this scale at all without external regulatory engagement.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"},
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"},
+            {"source": "EU AI Act", "ref": "Art 50", "topic": "Transparency obligations"}
+          ]
+        }
       }
     }
   },
   {
-    "id": "Q3",
-    "text": "How is your target cohort distributed geographically?",
+    "id": "Q-cohort_fit",
+    "section": "calibration",
+    "tags": ["cultural_fit", "multilingual_fairness", "training_distribution"],
+    "text": "How well does the population you're deploying to match the population the system was designed and trained for?\nConsider language, cultural context, socioeconomic distribution, accessibility needs, and digital habits. The further your users are from the design population, the higher the risk of culturally insensitive or unfair outcomes.",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
       "A": {
-        "text": "Rural/Remote",
-        "recommendation": "",
-        "nextq": "Q4"
+        "text": "Very close match — same demographics, language, cultural context",
+        "score": 0,
+        "nextq": "Q-llm_depth",
+        "recommendation": null
       },
       "B": {
-        "text": "Small-Medium Town",
-        "recommendation": "",
-        "nextq": "Q4"
+        "text": "Mostly aligned, some variation",
+        "score": 1,
+        "nextq": "Q-llm_depth",
+        "recommendation": {
+          "tradeoff": "Reach vs. cultural/linguistic appropriateness",
+          "considerations": "Some divergence between design population and deployment population is normal. Identify which axes of variation are most material to your system's outputs — and test against those variations explicitly.",
+          "references": []
+        }
       },
       "C": {
-        "text": "Large Town - City",
-        "recommendation": "",
-        "nextq": "Q4"        
+        "text": "Mixed — significant variation across one or more axes",
+        "score": 3,
+        "nextq": "Q-llm_depth",
+        "recommendation": {
+          "tradeoff": "Reaching more diverse users vs. system behaving worse for users outside its design assumptions",
+          "considerations": "When the deployment population differs significantly from the design population, the system may behave reasonably for the 'centre' of your users while systematically underperforming for those on the margins. Consider whether you have test data covering the full deployment distribution, whether outcomes vary by demographic group, and whether users on the margins have clear recourse.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"}
+          ]
+        }
       },
       "D": {
-        "text": "State",
-        "recommendation": "",
-        "nextq": "Q4"
+        "text": "Substantial divergence — deploying to populations the system wasn't designed for",
+        "score": 5,
+        "nextq": "Q-llm_depth",
+        "recommendation": {
+          "tradeoff": "Extending reach to under-served populations vs. exporting design assumptions that may not fit",
+          "considerations": "Systems trained on WEIRD (Western, Educated, Industrialised, Rich, Democratic) data and deployed against non-WEIRD populations often produce culturally inappropriate or unfair outputs without anyone noticing. Invest in local user research, deploy with humility, expose your system's confidence boundaries, and give populations on the margins clear ways to flag failures.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"},
+            {"source": "EU AI Act", "ref": "Art 13", "topic": "Transparency and provision of information"}
+          ]
+        }
       },
       "E": {
-        "text": "National",
-        "recommendation": "",
-        "nextq": "Q4"
-      },
-      "F": {
-        "text": "2-3 Countries",
-        "recommendation": "",
-        "nextq": "Q4"
-      },
-      "G": {
-        "text": "Global",
-        "recommendation": "",
-        "nextq": "Q4"
-      }
-    }    
-  },
-  {
-    "id": "Q4",
-    "text": "Section #1 - Cohort scan.\nEstimates the relative vulnerability of your target cohort.\nTo continue, type 'Ok'",
-    "answers": {
-      "Ok": {
-        "text": "Ok",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q5"
+        "text": "Severe mismatch — populations and contexts the system has no business operating in",
+        "score": 8,
+        "nextq": "Q-llm_depth",
+        "recommendation": {
+          "tradeoff": "Reach vs. cultural colonialism",
+          "considerations": "Deploying a system far outside its design population without significant rework risks active harm — including imposing the design population's assumptions, values, and biases onto people who never consented to them. Strongly consider whether you should deploy here at all without first commissioning local design work, local validation, and local governance.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"},
+            {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"},
+            {"source": "UN Guiding Principles on Business and Human Rights", "ref": "Principle 18", "topic": "Human rights due diligence"}
+          ]
+        }
       }
     }
   },
   {
-    "id": "Q5",
-    "text": "Is your target cohort economically vulnerable?\nLook at average earning rates of your country if you aren't sure where your demographic sits overall.",
+    "id": "Q-llm_depth",
+    "section": "calibration",
+    "tags": ["llm_depth", "routing"],
+    "text": "Where does the LLM (or foundation model) sit in your system?\nThis answer determines which harm classes the rest of the assessment focuses on. It does NOT directly change your score — it just routes which questions are relevant.",
+    "gating": null,
+    "weight_tier": "n/a",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Top 10% of earners",
+      "none": {
+        "text": "No LLM. Classical ML / rules / deterministic logic only.",
         "score": 0,
-        "recommendation": "",
-        "nextq": "Q6"
+        "depth_set": "none",
+        "nextq": "Q-cohort_econ",
+        "recommendation": null
       },
-      "B": {
-        "text": "Less vulnerable than average",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q6"
+      "point": {
+        "text": "Point LLM — one LLM call inside a larger non-LLM pipeline (e.g., summarisation, classification, extraction).",
+        "score": 0,
+        "depth_set": "point",
+        "nextq": "Q-cohort_econ",
+        "recommendation": null
       },
-      "C": {
-        "text": "Average",
-        "score": 3,
-        "recommendation": "",
-        "nextq": "Q6"
+      "pervasive": {
+        "text": "Pervasive — the LLM is the primary reasoner (chatbot, copilot, decision-recommender). Outputs go to humans or downstream systems but the LLM doesn't directly act.",
+        "score": 0,
+        "depth_set": "pervasive",
+        "nextq": "Q-cohort_econ",
+        "recommendation": null
       },
+      "agentic": {
+        "text": "Agentic — the LLM takes real-world actions (writes to databases, calls APIs, sends emails, executes code, controls hardware).",
+        "score": 0,
+        "depth_set": "agentic",
+        "nextq": "Q-cohort_econ",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-cohort_econ",
+    "section": "shared_scan",
+    "tags": ["cohort_vulnerability", "economic"],
+    "text": "Is your target cohort economically vulnerable?\nLook at average earning rates of your country if you aren't sure where your demographic sits overall.",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "Top 10% of earners", "score": 0, "nextq": "Q-cohort_psych", "recommendation": null},
+      "B": {"text": "Less vulnerable than average", "score": 1, "nextq": "Q-cohort_psych", "recommendation": null},
+      "C": {"text": "Average", "score": 3, "nextq": "Q-cohort_psych", "recommendation": null},
       "D": {
         "text": "More vulnerable than average",
         "score": 6,
-        "recommendation": "",
-        "nextq": "Q6"
+        "nextq": "Q-cohort_psych",
+        "recommendation": {
+          "tradeoff": "Serving an economically vulnerable cohort vs. risking harm with disproportionate consequences",
+          "considerations": "Errors and unfavourable decisions hit economically vulnerable users harder — they have less buffer to absorb them, less time to appeal, and fewer alternatives. Consider whether your system's failure modes scale with users' ability to bear them.",
+          "references": []
+        }
       },
       "E": {
         "text": "Bottom 10% of earners",
         "score": 8,
-        "recommendation": "",
-        "nextq": "Q6"
+        "nextq": "Q-cohort_psych",
+        "recommendation": {
+          "tradeoff": "Serving the most economically vulnerable vs. risking compounding existing disadvantage",
+          "considerations": "Decisions that affect the most economically vulnerable can compound existing disadvantage in ways that are very difficult to undo. Treat failure cases as serious by default. Ensure access to human review is free and accessible without digital literacy barriers.",
+          "references": []
+        }
       }
     }
   },
   {
-    "id": "Q6",
-    "text": "Is your target cohort psychologically vulnerable?\nAre they likely to suffer from mental health issues, self-harm, or to have their capacity to work, study, or pursue their goals impacted by debilitating mental illness?",
+    "id": "Q-cohort_psych",
+    "section": "shared_scan",
+    "tags": ["cohort_vulnerability", "psychological"],
+    "text": "Is your target cohort psychologically vulnerable?\nAre they likely to suffer from mental health issues, self-harm risk, or to have their capacity to work, study, or pursue goals impacted by debilitating mental illness?",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Very robust",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q7"
-      },
-      "B": {
-        "text": "Less vulnerable than average",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q7"
-      },
-      "C": {
-        "text": "Average",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q7"
-      },
+      "A": {"text": "Very robust", "score": 0, "nextq": "Q-cohort_coercive", "recommendation": null},
+      "B": {"text": "Less vulnerable than average", "score": 1, "nextq": "Q-cohort_coercive", "recommendation": null},
+      "C": {"text": "Average", "score": 2, "nextq": "Q-cohort_coercive", "recommendation": null},
       "D": {
         "text": "More vulnerable than average",
         "score": 3,
-        "recommendation": "",
-        "nextq": "Q7"
+        "nextq": "Q-cohort_coercive",
+        "recommendation": {
+          "tradeoff": "Serving a psychologically vulnerable cohort vs. risking outcomes that worsen distress",
+          "considerations": "Consider how your system communicates negative outcomes, what crisis support paths exist, and whether the system is designed not to trigger or escalate distress. Where parasocial dynamics are possible (LLM-driven systems especially), heighten caution.",
+          "references": []
+        }
       },
       "E": {
         "text": "Extremely vulnerable",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q7"
+        "nextq": "Q-cohort_coercive",
+        "recommendation": {
+          "tradeoff": "Serving the most psychologically vulnerable vs. risking direct harm",
+          "considerations": "When the cohort is most at risk, the bar for safety and care in system design is highest. Crisis support, human handoff, content sensitivity, and harm pathways need explicit design. Consult clinical/safety experts.",
+          "references": []
+        }
       }
     }
   },
   {
-    "id": "Q7",
-    "text": "Is your target cohort vulnerable to coercive control?\nConsider parents controlling LGBTQI children. Jaime Spears. Elder abuse. Intimate partner abuse. Technological coercion or control.",
+    "id": "Q-cohort_coercive",
+    "section": "shared_scan",
+    "tags": ["cohort_vulnerability", "coercive_control"],
+    "text": "Is your target cohort vulnerable to coercive control?\nConsider parents controlling LGBTQI+ children, conservatorships, elder abuse, intimate partner abuse, technological coercion, employer monitoring.",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Not vulnerable",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q8"
-      },
-      "B": {
-        "text": "Less vulnerable than average",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q8"
-      },
-      "C": {
-        "text": "Average",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q8"
-      },
+      "A": {"text": "Not vulnerable", "score": 0, "nextq": "Q-cohort_policing", "recommendation": null},
+      "B": {"text": "Less vulnerable than average", "score": 1, "nextq": "Q-cohort_policing", "recommendation": null},
+      "C": {"text": "Average", "score": 2, "nextq": "Q-cohort_policing", "recommendation": null},
       "D": {
         "text": "More vulnerable than average",
         "score": 3,
-        "recommendation": "",
-        "nextq": "Q8"
+        "nextq": "Q-cohort_policing",
+        "recommendation": {
+          "tradeoff": "Serving users vulnerable to coercive control vs. risking the system becoming an instrument of that control",
+          "considerations": "Account creation, communication features, location data, and message history can all be weaponised by abusers with access. Consider safety modes (hidden activity), the ability to disguise app usage, and quick exits to safe content.",
+          "references": []
+        }
       },
       "E": {
         "text": "Extremely vulnerable",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q8"
+        "nextq": "Q-cohort_policing",
+        "recommendation": {
+          "tradeoff": "Reaching users facing coercive control vs. the system being used against them",
+          "considerations": "Where coercive control risk is high, anti-stalking design patterns become essential. Consult domain experts (domestic violence organisations, child welfare orgs, elder advocacy groups) on threat models.",
+          "references": []
+        }
       }
     }
   },
   {
-    "id": "Q8",
-    "text": "Is your target cohort over-policed or over-surveilled?\nAre they more likely than the average population in any aspect of their lives to be targeted by police, social services or surveillance systems?",
+    "id": "Q-cohort_policing",
+    "section": "shared_scan",
+    "tags": ["cohort_vulnerability", "surveillance"],
+    "text": "Is your target cohort over-policed or over-surveilled?\nAre they more likely than average to be targeted by police, social services, immigration enforcement, or surveillance systems?",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Very unlikely",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q9"
-      },
-      "B": {
-        "text": "Less likely than average",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q9"
-      },
-      "C": {
-        "text": "Average",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q9"
-      },
+      "A": {"text": "Very unlikely", "score": 0, "nextq": "Q-cohort_tech_literacy", "recommendation": null},
+      "B": {"text": "Less likely than average", "score": 1, "nextq": "Q-cohort_tech_literacy", "recommendation": null},
+      "C": {"text": "Average", "score": 2, "nextq": "Q-cohort_tech_literacy", "recommendation": null},
       "D": {
         "text": "More likely than average",
         "score": 3,
-        "recommendation": "",
-        "nextq": "Q9"
+        "nextq": "Q-cohort_tech_literacy",
+        "recommendation": {
+          "tradeoff": "Serving over-policed populations vs. risking the system contributing to existing surveillance",
+          "considerations": "Data your system collects can be subpoenaed, leaked, or repurposed. Consider data minimisation, encryption at rest, retention limits, and clear policies on cooperation with law enforcement requests.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 5", "topic": "Principles relating to processing of personal data (data minimisation)"}
+          ]
+        }
       },
       "E": {
         "text": "Extremely likely",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q9"
+        "nextq": "Q-cohort_tech_literacy",
+        "recommendation": {
+          "tradeoff": "Serving the most-surveilled populations vs. compounding existing surveillance harm",
+          "considerations": "Strong data minimisation, end-to-end encryption where possible, and a clear stance on third-party data requests are essential. Consult communities directly about what their threat model looks like.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 5", "topic": "Principles relating to processing of personal data"},
+            {"source": "GDPR", "ref": "Art 25", "topic": "Data protection by design and by default"}
+          ]
+        }
       }
     }
   },
   {
-    "id": "Q9",
-    "text": "Is your target cohort technologically vulnerable?\nWill they have more difficulty navigating technological systems than average? Poor digital literacy? Do they have a higher rate of visual impairments or other disabilities which would compound this?",
+    "id": "Q-cohort_tech_literacy",
+    "section": "shared_scan",
+    "tags": ["cohort_vulnerability", "digital_literacy"],
+    "text": "Is your target cohort technologically vulnerable?\nWill they have more difficulty navigating technological systems than average? Poor digital literacy? Higher rate of visual impairments or other accessibility needs?",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Top 10% of computer users",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q10"
-      },
-      "B": {
-        "text": "More confident than average",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q10"
-      },
-      "C": {
-        "text": "Average",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q10"
-      },
+      "A": {"text": "Top 10% of computer users", "score": 0, "nextq": "Q-cohort_internet", "recommendation": null},
+      "B": {"text": "More confident than average", "score": 1, "nextq": "Q-cohort_internet", "recommendation": null},
+      "C": {"text": "Average", "score": 2, "nextq": "Q-cohort_internet", "recommendation": null},
       "D": {
         "text": "Less confident than average",
         "score": 3,
-        "recommendation": "",
-        "nextq": "Q10"
+        "nextq": "Q-cohort_internet",
+        "recommendation": {
+          "tradeoff": "Reaching less-tech-confident users vs. interfaces that exclude them",
+          "considerations": "Invest in usability testing with actual representative users. Provide non-digital paths (phone, in-person) for anything consequential. Use plain language. Don't gate recourse behind digital literacy.",
+          "references": [
+            {"source": "WCAG 2.2", "ref": "Level AA", "topic": "Web accessibility"}
+          ]
+        }
       },
       "E": {
         "text": "Bottom 10% of computer users",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q10"
+        "nextq": "Q-cohort_internet",
+        "recommendation": {
+          "tradeoff": "Including the least-tech-confident users vs. interfaces that systematically exclude them",
+          "considerations": "Digital-first systems can effectively exclude users at the bottom of the digital literacy distribution. Non-digital fallbacks are essential. Verify accessibility for screen readers, low-vision modes, and cognitive accessibility.",
+          "references": [
+            {"source": "WCAG 2.2", "ref": "Level AA", "topic": "Web accessibility"}
+          ]
+        }
       }
     }
   },
   {
-    "id": "Q10",
-    "text": "Does your target cohort have robust internet access?\nIs your target cohort in a remote area with poor infrastructure? Exposed to download or over-limit fees? Access on 1 or more devices? Internet sharing or have own service? Physically at-risk if they try to access public internet? Are they accessing the internet from cellular networks, NBN, ADSL, Broadband, other?",
+    "id": "Q-cohort_internet",
+    "section": "shared_scan",
+    "tags": ["cohort_vulnerability", "infrastructure"],
+    "text": "Does your target cohort have robust internet access?\nRemote areas with poor infrastructure? Exposed to download or over-limit fees? Single shared device? Physical risk in accessing public internet? Cellular vs. NBN vs. ADSL vs. broadband?",
+    "gating": null,
+    "weight_tier": "low",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Top 10%",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q11"
-      },
-      "B": {
-        "text": "Better access than average",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q11"
-      },
-      "C": {
-        "text": "Average access",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q11"
-      },
+      "A": {"text": "Top 10%", "score": 0, "nextq": "Q-market_competition", "recommendation": null},
+      "B": {"text": "Better access than average", "score": 1, "nextq": "Q-market_competition", "recommendation": null},
+      "C": {"text": "Average access", "score": 2, "nextq": "Q-market_competition", "recommendation": null},
       "D": {
         "text": "Worse access than average",
         "score": 3,
-        "recommendation": "",
-        "nextq": "Q11"
+        "nextq": "Q-market_competition",
+        "recommendation": {
+          "tradeoff": "Reaching users with constrained connectivity vs. the system performing poorly for them",
+          "considerations": "Test on slow networks. Use lightweight payloads. Cache aggressively. Offer offline or low-bandwidth modes for anything consequential. Where users pay per MB, don't auto-load images or auto-stream.",
+          "references": []
+        }
       },
       "E": {
         "text": "Bottom 10%",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q11"
+        "nextq": "Q-market_competition",
+        "recommendation": {
+          "tradeoff": "Reaching the most connectivity-constrained users vs. systematically failing them",
+          "considerations": "Where connectivity is the bottleneck, alternative channels become essential — SMS, USSD, voice, in-person. For anything affecting material outcomes, do not require a stable broadband connection.",
+          "references": []
+        }
       }
     }
   },
   {
-    "id": "Q11",
-    "text": "Section #2 - System scan.\nEstimates the resiliance of your system and it's ability to observe and recover from failure cases.\nTo continue, type 'Ok'",
-    "answers": {
-      "Ok": {
-        "text": "Ok",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q12"
-      }
-    }
-  },
-  {
-    "id": "Q12",
-    "text": "Does your decision system operate as part of a competitive marketplace, or are you the only provider of the specific service, platform, resource or goods?\nConsider the viability and discoverability of alternatives or competitor systems. Consider network effects, brand visibility, feature parity, cost of adoption, etc.",
+    "id": "Q-market_competition",
+    "section": "shared_scan",
+    "tags": ["market_position", "foundation_model_concentration_adjacent"],
+    "text": "Does your decision system operate in a competitive marketplace, or are you the only provider?\nConsider viability and discoverability of alternatives, network effects, brand visibility, feature parity, cost of switching.",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
       "A": {
         "text": "Effective monopoly or government service",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q13"
+        "nextq": "Q-mandatory_or_optional",
+        "recommendation": {
+          "tradeoff": "Market position vs. user power to walk away from system failures",
+          "considerations": "When users have no alternative, the system carries higher accountability — failures aren't market signals, they're structural harms. Heightened due diligence on fairness, redress, and external oversight is appropriate.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
       },
       "B": {
         "text": "1 competitor",
         "score": 4,
-        "recommendation": "",
-        "nextq": "Q13"
+        "nextq": "Q-mandatory_or_optional",
+        "recommendation": {
+          "tradeoff": "Limited competition vs. user power to switch",
+          "considerations": "Duopoly conditions still constrain user choice. Be deliberate about not exploiting that lack of alternatives — fairness, redress, and transparency carry more weight than pure user-experience signals would suggest.",
+          "references": []
+        }
       },
-      "C": {
-        "text": "2 competitors",
-        "score": 3,
-        "recommendation": "",
-        "nextq": "Q13"
-      },
-      "D": {
-        "text": "3-4 competitors",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q13"
-      },
-      "E": {
-        "text": "5+ competitors",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q13"
-      }
+      "C": {"text": "2 competitors", "score": 3, "nextq": "Q-mandatory_or_optional", "recommendation": null},
+      "D": {"text": "3-4 competitors", "score": 1, "nextq": "Q-mandatory_or_optional", "recommendation": null},
+      "E": {"text": "5+ competitors", "score": 0, "nextq": "Q-mandatory_or_optional", "recommendation": null}
     }
   },
   {
-    "id": "Q13",
-    "text": "Is your decision system mandatory or optional?\nMandatory systems will be mostly government applications; paying taxes, rent, complying with judicial hearings or prison sentences, etc.",
+    "id": "Q-mandatory_or_optional",
+    "section": "shared_scan",
+    "tags": ["consent", "mandatory_use"],
+    "text": "Is your decision system mandatory or optional?\nMandatory systems are usually government applications — paying taxes, judicial systems, prison administration — or employer/institution-required tools.",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
+      "Mandatory": {
         "text": "Mandatory",
         "score": 8,
-        "recommendation": "",
-        "nextq": "Q18"
+        "nextq": "Q-kill_switch",
+        "recommendation": {
+          "tradeoff": "Mandatory use vs. user autonomy and consent",
+          "considerations": "When users cannot opt out, the system carries the highest accountability bar. Transparency about what the system does, why decisions were made, and what redress is available all matter more. Consider whether mandatory use is genuinely necessary or whether opt-in alternatives could exist.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 22", "topic": "Automated individual decision-making, including profiling"},
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
       },
-      "B": {
+      "Optional": {
         "text": "Optional",
         "score": 0,
-        "recommendation": "",
-        "nextq": "Q14"
+        "nextq": "Q-opt_default",
+        "recommendation": null
       }
     }
   },
   {
-    "id": "Q14",
-    "text": "Is your decision system opt-in or opt-out?\nDoes the target cohort actively choose to participate or add themselves? Or are they included by default and have to actively remove themselves?",
+    "id": "Q-opt_default",
+    "section": "shared_scan",
+    "tags": ["consent", "opt_in_default"],
+    "text": "Is your decision system opt-in or opt-out?\nDoes the target cohort actively choose to participate, or are they included by default?",
+    "gating": {"prerequisite": "Q-mandatory_or_optional.answer == 'Optional'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Opt-in",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q18"
-      },
+      "A": {"text": "Opt-in (users actively choose to participate)", "score": 0, "nextq": "Q-kill_switch", "recommendation": null},
       "B": {
-        "text": "Opt-out",
+        "text": "Opt-out (users are included by default)",
         "score": 0,
-        "recommendation": "",
-        "nextq": "Q15"
+        "nextq": "Q-opt_visibility",
+        "recommendation": null
       }
     }
   },
   {
-    "id": "Q15",
-    "text": "How visible or discoverable is it that the target cohort has been added to the system?\nDo you notify them, is the operation of your system visible, or do they have to find it in a setting or lodge their own query?",
+    "id": "Q-opt_visibility",
+    "section": "shared_scan",
+    "tags": ["consent", "transparency"],
+    "text": "How visible or discoverable is it that the target cohort has been added to the system?\nDo you notify them? Is the system's operation visible to them? Or do they have to find it in a setting or lodge a query?",
+    "gating": {"prerequisite": "Q-opt_default.answer == 'B'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
       "A": {
         "text": "Hard to find",
         "score": 3,
-        "recommendation": "System visibility\nIf your target cohort is automatically opted into your system, you must ensure that this is clearly explained, and allow them to opt-out easily through the same interface.",
-        "nextq": "Q16"
+        "nextq": "Q-opt_difficulty",
+        "recommendation": {
+          "tradeoff": "Avoiding interface clutter vs. users not knowing they're in the system",
+          "considerations": "Opt-out systems require visibility for consent to be meaningful. If users can't easily find out they've been opted in, they can't exercise the choice to leave.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 13", "topic": "Information to be provided"},
+            {"source": "GDPR", "ref": "Art 14", "topic": "Information where data not obtained from data subject"}
+          ]
+        }
       },
       "B": {
         "text": "Average",
         "score": 2,
-        "recommendation": "System visibility\nIf your target cohort is automatically opted into your system, you must ensure that this is clearly explained, and allow them to opt-out easily through the same interface.",
-        "nextq": "Q16"
+        "nextq": "Q-opt_difficulty",
+        "recommendation": {
+          "tradeoff": "UI simplicity vs. consent visibility",
+          "considerations": "If membership in the system isn't immediately apparent, lean toward more proactive disclosure rather than relying on users to find it.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 13", "topic": "Information to be provided"}
+          ]
+        }
       },
-      "E": {
-        "text": "Discoverable",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q16"
-      }
+      "C": {"text": "Discoverable / proactively communicated", "score": 0, "nextq": "Q-opt_difficulty", "recommendation": null}
     }
   },
   {
-    "id": "Q16",
+    "id": "Q-opt_difficulty",
+    "section": "shared_scan",
+    "tags": ["consent", "opt_out_ease"],
     "text": "How difficult is it to opt out?",
+    "gating": {"prerequisite": "Q-opt_default.answer == 'B'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
     "answers": {
       "A": {
-        "text": "Difficult",
+        "text": "Difficult — multiple steps, hidden, requires contacting support",
         "score": 3,
-        "recommendation": "System usability\nIf your target cohort is automatically opted into your system, you must ensure that this is clearly explained, and allow them to opt-out easily through the same interface.",
-        "nextq": "Q17"
+        "nextq": "Q-opt_perpetuity",
+        "recommendation": {
+          "tradeoff": "Retention vs. respecting user choice to leave",
+          "considerations": "If opt-out is difficult, you're effectively retaining users against their preference. Make the opt-out path at least as easy as the opt-in path was.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 7", "topic": "Conditions for consent"}
+          ]
+        }
       },
-      "B": {
-        "text": "Average",
-        "score": 2,
-        "recommendation": "System usability\nIf your target cohort is automatically opted into your system, you must ensure that this is clearly explained, and allow them to opt-out easily through the same interface.",
-        "nextq": "Q17"
-      },
-      "C": {
-        "text": "Easy",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q17"
-      }
+      "B": {"text": "Average — takes a few clicks", "score": 1, "nextq": "Q-opt_perpetuity", "recommendation": null},
+      "C": {"text": "Easy — one or two clicks, clearly signposted", "score": 0, "nextq": "Q-opt_perpetuity", "recommendation": null}
     }
   },
   {
-    "id": "Q17",
-    "text": "How perpetual is opting out?\nDoes the user preference remain for system upgrades or migrations, normal use, etc?",
+    "id": "Q-opt_perpetuity",
+    "section": "shared_scan",
+    "tags": ["consent", "opt_out_permanence"],
+    "text": "How perpetual is opting out?\nDoes the user's preference persist across system upgrades, migrations, or normal use?",
+    "gating": {"prerequisite": "Q-opt_default.answer == 'B'"},
+    "weight_tier": "low",
+    "preferred_modality": "buttons",
     "answers": {
-      "A": {
-        "text": "Lasts forever",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q18"
-      },
+      "A": {"text": "Lasts forever", "score": 0, "nextq": "Q-kill_switch", "recommendation": null},
       "B": {
-        "text": "Lasts forever (but periodically asked to opt in)",
+        "text": "Lasts forever but users are periodically asked to opt back in",
         "score": 1,
-        "recommendation": "",
-        "nextq": "Q18"
+        "nextq": "Q-kill_switch",
+        "recommendation": {
+          "tradeoff": "Re-engagement vs. respecting the user's prior choice",
+          "considerations": "Repeated re-prompts to opt back in can become a dark pattern. Limit frequency and make 'don't ask again' a real option.",
+          "references": []
+        }
       },
       "C": {
-        "text": "Reset periodically",
+        "text": "Reset periodically (e.g. after upgrade or migration)",
         "score": 2,
-        "recommendation": "System visibility\nIf the target cohort is added back into the system automatically, you must alert them to the fact and and allow them to opt-out easily through the same interface.",
-        "nextq": "Q18"
+        "nextq": "Q-kill_switch",
+        "recommendation": {
+          "tradeoff": "Operational simplicity vs. preserving user preferences across system changes",
+          "considerations": "Resetting opt-outs is functionally the same as silently re-enrolling users. If you must reset, alert users clearly that this has happened and provide one-click re-opt-out.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 7", "topic": "Conditions for consent"}
+          ]
+        }
       }
     }
   },
   {
-    "id": "Q18",
-    "text": "Can you turn your decision system off instantly if something goes wrong?\nCan you do this with one click, or do you have to deploy code to take it down?",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q19"
-      },
+    "id": "Q-kill_switch",
+    "section": "shared_scan",
+    "tags": ["safety", "operability", "agent_safety_adjacent"],
+    "text": "Can you turn your decision system off instantly if something goes wrong?\nOne click? Or do you have to deploy code? For LLM-driven and agentic systems this question carries extra weight — an agent taking destructive action needs to be stoppable mid-loop.",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes — one click, instant", "score": 0, "nextq": "Q-confabulation", "recommendation": null},
       "No": {
-        "text": "No",
-        "score": 3,
-        "recommendation": "Graceful degredation.\nAdd a feature flag or other automation process that allows you to turn it off in production, if issues arise. Consider, for example, building a simple business logic version as a fall-back, to keep the system running.",
-        "nextq": "Q19"
-      }
-    }
-  },
-  {
-    "id": "Q19",
-    "text": "Does your system always output a classification, prediction, or decision?",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 3,
-        "recommendation": "Phone a (human friend).\nConsider looping in a person where the machine confidence is low, or when production data changes significantly.",
-        "nextq": "Q20"
-      },
-      "No": {
-        "text": "No",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q20"
-      }
-    }
-  },
-  {
-    "id": "Q20",
-    "text": "Do you provide a record of the system decision for individuals, including a unique ID that can be traced in your system log?\nFor their reference and for looking up that decision later on. This could be on-screen, email, PDF, etc.",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q21"
-      },
-      "No": {
-        "text": "No",
-        "score": 3,
-        "recommendation": "System auditability.\nFor system decisions or classifications, especially high stakes ones, provide a record of the system decison (email, PDF, text message, etc), including a unique ID that can be traced in your system log.",
-        "nextq": "Q21"
-      }
-    }
-  },
-  {
-    "id": "Q21",
-    "text": "Does your decision system request meaningful consent, including a clear explanation of the uses of data and ramifications of providing consent?\nNote if your consent request is tokenistic, confusing or deliberately misleading you should answer No",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q22"
-      },
-      "No": {
-        "text": "No",
-        "score": 5,
-        "recommendation": "GDPR\nIt is crucial to ensure that people are willing and informed participants in the system. A good consent request is clear, interpretable and contextual.",
-        "nextq": "Q24"
-      }
-    }
-  },
-  {
-    "id": "Q22",
-    "text": "Have you performed user testing to assess the usability of your consent section?",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q23"
-      },
-      "No": {
-        "text": "No",
-        "score": 2,
-        "recommendation": "System usability\nUser testing on the text and presentation of your consent request can significantly improve usability and interpretability.",
-        "nextq": "Q23"
-      }
-    }
-  },
-  {
-    "id": "Q23",
-    "text": "Do you provide a mechanism to allow individuals to revoke consent to use their data?",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q24"
-      },
-      "No": {
-        "text": "No",
-        "score": 3,
-        "recommendation": "GDPR compliance\nAllow target cohort to revoke consent to use their data. If they can do this but only within a fixed timeline, make sure that timeline is communicated in the interface.",
-        "nextq": "Q24"
-      }
-    }
-  },
-  {
-    "id": "Q24",
-    "text": "Do you provide any visual or text-based explanation of your automated system decision on the decision interface?\nThis could be in the form of displaying results for similar candidates, or identifying which feature had a strong impact on their outcome.",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q25"
-      },
-      "No": {
-        "text": "No",
-        "score": 3,
-        "recommendation": "System transparency\nAdd decision explanations to help your target cohort understand the system. Consider highlighting features which contributed to the result, and exposing system confidence or uncertainty, especially for high-stakes predictions.",
-        "nextq": "Q25"
-      }
-    }
-  },
-  {
-    "id": "Q25",
-    "text": "Can your target cohort request a decision review?\nIf they don't understand or agree with the automated decision, is there an existing channel or feedback mechanism for them to request explanation? Are explanations planned and available (e.g. you've designed or planned for them before they are requested)? Note this doesn't include generic feedback mechanisms.",
-      "answers": {
-      "Yes": {
-        "text": "Yes",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q26"
-      },
-      "No": {
-        "text": "No",
+        "text": "No — requires code deploy or other delay",
         "score": 6,
-        "recommendation": "Plan for failure\nImprove your risk score by allowing the target cohort to flag questions and concerns, and to request a human review of their decision. Make a plan for how you will conduct decision review. Think through which scenarios will justify a change and which ones won't and work through how to explain these outcomes clearly.",
-        "nextq": "Q29"
+        "nextq": "Q-confabulation",
+        "recommendation": {
+          "tradeoff": "Operational simplicity vs. ability to intervene during incidents",
+          "considerations": "Add a feature flag, kill switch, or other automation that allows immediate shutdown without a deploy. For agentic systems, also consider a per-action approval flow that can pause the agent without killing the whole system. Consider building a simple business-logic fallback as a safety net.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"},
+            {"source": "NIST AI RMF", "ref": "MANAGE 2.4", "topic": "Mechanisms to supersede, disengage, or deactivate AI systems"}
+          ]
+        }
       }
     }
   },
   {
-    "id": "Q26",
-    "text": "What is the probability that decision review will reverse or change the decision?",
-      "answers": {
-      "A": {
-        "text": "Unlikely",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q27"
-      },
-      "B": {
-        "text": "No different than chance",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q27"
-      },
-      "C": {
-        "text": "Likely",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q27"
-      }
-    }
-  },
-  {
-    "id": "Q27",
-    "text": "On-average how much effort is required by your target cohort to lodge a request for decision review?",
-      "answers": {
-      "A": {
-        "text": "1-2 hours",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q28"
-      },
-      "B": {
-        "text": "1 day",
-        "score": 1,
-        "recommendation": "Decison review\nRequiring a significant effort to reverse a system decision risks further harm. Try to simplify up the decision review process.",
-        "nextq": "Q28"
-      },
-      "C": {
-        "text": "Longer",
-        "score": 2,
-        "recommendation": "Decison review\nRequiring a significant effort to reverse a system decision risks further harm. Try to simplify the decision review process.",
-        "nextq": "Q28"
-      }
-    }
-  },
-  {
-    "id": "Q28",
-    "text": "On-average how long will your decision review process take?",
-      "answers": {
-      "A": {
-        "text": "Instantaneous (machine review)",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q29"
-      },
-      "B": {
-        "text": "1 business day",
-        "score": 1,
-        "recommendation": "Decison review\nMaking people wait a significant period of time to reverse a system decision risks further harm. Speed up the decision review process to improve your score.",
-        "nextq": "Q29"
-      },
-      "C": {
-        "text": "Longer",
-        "score": 2,
-        "recommendation": "Decison review\nMaking people wait a significant period of time to reverse a system decision risks further harm. Speed up the decision review process to improve your score.",
-        "nextq": "Q29"
-      }
-    }
-  },
-  {
-    "id": "Q29",
-    "text": "Section #3 - Maslov's Hierarchy of needs.\nSlightly updated for the modern era. Compares the likelihood of harm with no intervention (if your system didn't exist) to the likelihood of this harm occurring as a result of your intervention.\nSo if your target cohort are all drinking toxic water and your system reduces the number of people getting toxic water, you're reducing the probability of this harm because of the high base rate.\nTo continue, type 'Ok'",
+    "id": "Q-confabulation",
+    "section": "llm_subtree",
+    "tags": ["confabulation", "calibrated_confidence", "escalation"],
+    "text": "Does your system expose calibrated confidence in its outputs, and do low-confidence outputs route to a human or fall back to a safer default?\nMany LLM-based systems have no internal confidence measure at all — answer accordingly.",
+    "gating": {"depth_in": ["point", "pervasive", "agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
     "answers": {
-      "Ok": {
-        "text": "Ok",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q30"
-      }
-    }
-  },
-  {
-    "id": "Q30",
-    "text": "Physiological needs\nWhat's the probability that decisions, classifications, predictions or interventions from your automated decision system will directly, negatively impact your target cohort's Physiological needs? (Air, water, food, shelter, sleep, reproduction)",
-      "answers": {
       "A": {
-        "text": "10% Very unlikely",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q31"
-      },
-      "B": {
-        "text": "33% Unlikely",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q31"
-      },
-      "C": {
-        "text": "50% (no different than chance)",
-        "score": 3,
-        "recommendation": "",
-        "nextq": "Q31"
-      },
-      "D": {
-        "text": "66% Likely",
-        "score": 6,
-        "recommendation": "",
-        "nextq": "Q31"
-      },
-      "E": {
-        "text": "90% Very likely",
+        "text": "No confidence measure exists — system always speaks with the same confidence regardless of how reliable its answer is",
         "score": 8,
-        "recommendation": "",
-        "nextq": "Q31"
-      }
-    }
-  },
-  {
-    "id": "Q31",
-    "text": "Safety needs\nWhat's the probability that decisions, classifications, predictions or interventions from your automated decision system will directly, negatively impact your target cohort's Safety needs? (Personal security, employment, resources, health, property, internet access, information access, information security)",
-      "answers": {
-      "A": {
-        "text": "10% Very unlikely",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q32"
+        "nextq": "Q-training_data_fit",
+        "recommendation": {
+          "tradeoff": "Conversational fluency vs. users being able to tell when the system is making things up",
+          "considerations": "LLM outputs without confidence signals encourage users to trust them equally — including when they're wrong. At minimum, expose a confidence proxy (model-evaluated, ensemble, retrieval-grounded, or self-consistency-based). For high-stakes outputs, abstaining is a valid response.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 13", "topic": "Transparency and provision of information to deployers"},
+            {"source": "NIST AI RMF", "ref": "MEASURE 2.5", "topic": "AI system trustworthiness characteristics — reliability and accuracy"}
+          ]
+        }
       },
       "B": {
-        "text": "33% Unlikely",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q32"
-      },
-      "C": {
-        "text": "50% (no different than chance)",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q32"
-      },
-      "D": {
-        "text": "66% Likely",
+        "text": "Confidence is shown to users but there's no escalation for low confidence",
         "score": 4,
-        "recommendation": "",
-        "nextq": "Q32"
+        "nextq": "Q-training_data_fit",
+        "recommendation": {
+          "tradeoff": "Showing uncertainty vs. acting on it",
+          "considerations": "A confidence signal that nobody acts on is decorative. Define a low-confidence threshold and decide what happens at it — human review, fallback to a safer default, abstention.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
       },
-      "E": {
-        "text": "90% Very likely",
-        "score": 7,
-        "recommendation": "",
-        "nextq": "Q32"
+      "C": {
+        "text": "Confidence + escalation for low-confidence cases (human review or fallback)",
+        "score": 1,
+        "nextq": "Q-training_data_fit",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Confidence + escalation + ongoing monitoring of confidence drift over time",
+        "score": 0,
+        "nextq": "Q-training_data_fit",
+        "recommendation": null
       }
     }
   },
   {
-    "id": "Q32",
-    "text": "Love and belonging needs\nWhat's the probability that decisions, classifications, predictions or interventions from your automated decision system will directly, negatively impact your target cohort's Love and belonging needs? (Friendship, intimacy, family, sense of connection, access to online communities)",
-      "answers": {
+    "id": "Q-training_data_fit",
+    "section": "llm_subtree",
+    "tags": ["training_data_fit", "domain_coverage", "evals"],
+    "text": "How well does the foundation model's training distribution cover your domain, language, and specialist context — and how much have you invested in evals and scaffolding to compensate?",
+    "gating": {"depth_in": ["point", "pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
       "A": {
-        "text": "10% Very unlikely",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q33"
-      },
-      "B": {
-        "text": "33% Unlikely",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q33"
-      },
-      "C": {
-        "text": "50% (no different than chance)",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q33"
-      },
-      "D": {
-        "text": "66% Likely",
-        "score": 4,
-        "recommendation": "",
-        "nextq": "Q33"
-      },
-      "E": {
-        "text": "90% Very likely",
-        "score": 6,
-        "recommendation": "",
-        "nextq": "Q33"
-      }
-    }
-  },
-  {
-    "id": "Q33",
-    "text": "Esteem needs\nWhat's the probability that decisions, classifications, predictions or interventions from your automated decision system will directly, negatively impact your target cohort's Esteem needs? (Respect, self-esteem, status, recognition, strength, freedom)",
-      "answers": {
-      "A": {
-        "text": "10% Very unlikely",
-        "score": 0,
-        "recommendation": "",
-        "nextq": "Q34"
-      },
-      "B": {
-        "text": "33% Unlikely",
-        "score": 1,
-        "recommendation": "",
-        "nextq": "Q34"
-      },
-      "C": {
-        "text": "50% (no different than chance)",
-        "score": 2,
-        "recommendation": "",
-        "nextq": "Q34"
-      },
-      "D": {
-        "text": "66% Likely",
-        "score": 3,
-        "recommendation": "",
-        "nextq": "Q34"
-      },
-      "E": {
-        "text": "90% Very likely",
+        "text": "General-purpose model, no domain evals, no scaffolding",
         "score": 5,
-        "recommendation": "",
-        "nextq": "Q34"
+        "nextq": "Q-prompt_injection_handling",
+        "recommendation": {
+          "tradeoff": "Speed of integration vs. confidence that the model knows your domain",
+          "considerations": "Foundation models are trained on the public internet and skew toward high-resource domains. If you haven't tested behaviour in your domain, you don't actually know how it performs there. Even a small hand-written eval set, run on each model version, is a useful baseline.",
+          "references": [
+            {"source": "NIST AI RMF", "ref": "MEASURE 2.6", "topic": "AI system performance — domain and context"}
+          ]
+        }
+      },
+      "B": {
+        "text": "Some domain evals exist",
+        "score": 3,
+        "nextq": "Q-prompt_injection_handling",
+        "recommendation": {
+          "tradeoff": "Eval coverage vs. ongoing maintenance cost",
+          "considerations": "Some evals are better than none. Make sure your evals cover the failure modes that would matter most in your domain, not just the obvious cases.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Substantial domain evals + scaffolding (retrieval, structured prompts, tool use)",
+        "score": 1,
+        "nextq": "Q-prompt_injection_handling",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Domain-fine-tuned model + continuous eval against current data distribution",
+        "score": 0,
+        "nextq": "Q-prompt_injection_handling",
+        "recommendation": null
       }
     }
   },
   {
-    "id": "Q34",
-    "text": "Self-actualisation needs?\nWhat's the probability that decisions, classifications, predictions or interventions from your automated decision system will directly, negatively impact your target cohort's Self-actualisation needs? (Desire to become the most one can be)",
-      "answers": {
+    "id": "Q-prompt_injection_handling",
+    "section": "llm_subtree",
+    "tags": ["prompt_injection", "adversarial_input", "security"],
+    "text": "Does your system process untrusted input through the LLM, and if so what's your strategy against prompt injection?\nUntrusted input includes anything from end users, scraped data, third-party documents, emails, or any content not authored by your team.",
+    "gating": {"depth_in": ["point", "pervasive", "agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
       "A": {
-        "text": "10% Very unlikely",
+        "text": "No untrusted input passes through the LLM (we control all inputs)",
         "score": 0,
-        "recommendation": "",
-        "nextq": ""
+        "nextq": "Q-sycophancy_belief_reinforcement",
+        "recommendation": null
       },
       "B": {
-        "text": "33% Unlikely",
-        "score": 1,
-        "recommendation": "",
-        "nextq": ""
+        "text": "Untrusted input passes through, no specific defence",
+        "score": 7,
+        "nextq": "Q-sycophancy_belief_reinforcement",
+        "recommendation": {
+          "tradeoff": "Capability of handling open-ended input vs. exposure to prompt injection",
+          "considerations": "Prompt injection is a known and unsolved class of vulnerability. Treat untrusted inputs as adversarial — assume any attacker who can put text in front of your model can attempt to redirect its behaviour. Minimum baseline: structured input sanitisation, output validation against schema, and behavioural guardrails on what the LLM can produce.",
+          "references": [
+            {"source": "OWASP Top 10 for LLM Applications", "ref": "LLM01", "topic": "Prompt Injection"},
+            {"source": "EU AI Act", "ref": "Art 15", "topic": "Accuracy, robustness, cybersecurity"}
+          ]
+        }
       },
       "C": {
-        "text": "50% (no different than chance)",
-        "score": 2,
-        "recommendation": "",
-        "nextq": ""
+        "text": "Input sanitisation in place (strip control tokens, escape instructions, etc.)",
+        "score": 4,
+        "nextq": "Q-sycophancy_belief_reinforcement",
+        "recommendation": {
+          "tradeoff": "Defense-in-depth cost vs. residual risk",
+          "considerations": "Input sanitisation alone is brittle — attackers find new instruction patterns faster than sanitisation rules update. Add output validation and a layer that constrains what the LLM can produce regardless of input.",
+          "references": [
+            {"source": "OWASP Top 10 for LLM Applications", "ref": "LLM01", "topic": "Prompt Injection"}
+          ]
+        }
       },
       "D": {
-        "text": "66% Likely",
+        "text": "Sanitisation + output validation + behavioural guardrails (e.g. constrained generation, tool-use gating)",
+        "score": 1,
+        "nextq": "Q-sycophancy_belief_reinforcement",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-sycophancy_belief_reinforcement",
+    "section": "llm_subtree",
+    "tags": ["sycophancy", "belief_reinforcement"],
+    "text": "Does your system test for and mitigate sycophancy — the tendency to agree with users to please them, or to reinforce stated beliefs without challenge?\nThis matters especially for advice, decision-support, or any context where users might want validation rather than accuracy.",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Not tested — model behaves as default",
+        "score": 5,
+        "nextq": "Q-multilingual_fairness",
+        "recommendation": {
+          "tradeoff": "User satisfaction in the moment vs. accuracy and user welfare over time",
+          "considerations": "Foundation models are trained on signals that often reward agreeing with users. In contexts where users might be wrong, vulnerable, or seeking confirmation rather than truth, this becomes harmful. Eval against adversarial prompts that solicit agreement with wrong claims.",
+          "references": []
+        }
+      },
+      "B": {
+        "text": "Tested informally, no systematic mitigation",
         "score": 3,
-        "recommendation": "",
-        "nextq": ""
+        "nextq": "Q-multilingual_fairness",
+        "recommendation": {
+          "tradeoff": "Eval depth vs. cost",
+          "considerations": "Move from anecdotal observation to a sycophancy eval suite — a set of prompts designed to test whether the model defends accurate positions under user pressure.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Explicit anti-sycophancy in training, prompting, or system design",
+        "score": 1,
+        "nextq": "Q-multilingual_fairness",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Tested, measured, mitigated, and monitored over time",
+        "score": 0,
+        "nextq": "Q-multilingual_fairness",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-multilingual_fairness",
+    "section": "llm_subtree",
+    "tags": ["multilingual_fairness", "language_coverage"],
+    "text": "Have you tested model behaviour across the languages your users actually use, beyond English?\nFoundation models often perform substantially worse in lower-resource languages — quietly, without flagging the degradation.",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "English-only users (or English-only system)",
+        "score": 0,
+        "nextq": "Q-model_version_drift",
+        "recommendation": null
+      },
+      "B": {
+        "text": "Multilingual users but tested in English only",
+        "score": 5,
+        "nextq": "Q-model_version_drift",
+        "recommendation": {
+          "tradeoff": "Speed of multilingual rollout vs. confidence that the system actually works in each language",
+          "considerations": "Model quality degrades non-linearly across languages, and the degradation can include factual accuracy, safety behaviour, and tone. Eval per-language using each language's actual user task patterns — not just translated English benchmarks.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"}
+          ]
+        }
+      },
+      "C": {
+        "text": "Tested in English + 1-2 high-resource languages",
+        "score": 3,
+        "nextq": "Q-model_version_drift",
+        "recommendation": {
+          "tradeoff": "Eval cost vs. coverage of actual users",
+          "considerations": "If users speak languages you haven't tested, those users are effectively the test set. Add at least your top 5 user languages to the eval suite.",
+          "references": []
+        }
+      },
+      "D": {
+        "text": "Broad multilingual testing including low-resource languages",
+        "score": 0,
+        "nextq": "Q-model_version_drift",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-model_version_drift",
+    "section": "llm_subtree",
+    "tags": ["model_version_drift", "model_governance"],
+    "text": "How do you handle foundation model version updates?\nDo you pin to a specific version? Test on updates? Have rollback capability?",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Live with current/latest version, no pinning",
+        "score": 5,
+        "nextq": "Q-filter_bubble_engagement_shaped",
+        "recommendation": {
+          "tradeoff": "Always-current capabilities vs. behaviour silently changing under you",
+          "considerations": "Provider model updates can change behaviour in subtle ways — sometimes improving things, sometimes introducing new failure modes. Pin to a known version. Re-evaluate on update.",
+          "references": []
+        }
+      },
+      "B": {
+        "text": "Pinned, no formal update process",
+        "score": 3,
+        "nextq": "Q-filter_bubble_engagement_shaped",
+        "recommendation": {
+          "tradeoff": "Stability now vs. ability to take updates in future",
+          "considerations": "Pinning without an update process means you'll be stuck on an old version when one inevitably deprecates. Build the update path before you need it: eval suite, staged rollout, rollback plan.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Pinned + update test process",
+        "score": 1,
+        "nextq": "Q-filter_bubble_engagement_shaped",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Pinned + tested + automated rollback capability",
+        "score": 0,
+        "nextq": "Q-filter_bubble_engagement_shaped",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-filter_bubble_engagement_shaped",
+    "section": "llm_subtree",
+    "tags": ["filter_bubble", "engagement_shaping", "personalisation"],
+    "text": "Is your system's output shaped by engagement metrics or personalisation that could narrow what users see?\nApplies to recommender systems, generative content feeds, and any LLM-driven personalisation.",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "No personalisation or engagement optimisation",
+        "score": 0,
+        "nextq": "Q-synthetic_content_labelling",
+        "recommendation": null
+      },
+      "B": {
+        "text": "Personalisation with explicit diversity controls (e.g., exploration vs. exploitation, viewpoint diversity)",
+        "score": 1,
+        "nextq": "Q-synthetic_content_labelling",
+        "recommendation": null
+      },
+      "C": {
+        "text": "Personalisation without diversity controls",
+        "score": 3,
+        "nextq": "Q-synthetic_content_labelling",
+        "recommendation": {
+          "tradeoff": "Personalised relevance vs. systematically narrowing each user's view of available content",
+          "considerations": "Personalisation without diversity controls converges users into narrower and narrower content territories over time. Add explicit exploration, viewpoint diversity, or breaks-from-pattern as part of the ranking signal.",
+          "references": [
+            {"source": "EU Digital Services Act", "ref": "Art 27", "topic": "Recommender system transparency"}
+          ]
+        }
+      },
+      "D": {
+        "text": "Pure engagement-optimised feed (clicks, watch time, etc.)",
+        "score": 6,
+        "nextq": "Q-synthetic_content_labelling",
+        "recommendation": {
+          "tradeoff": "Maximising short-term engagement vs. long-term user wellbeing",
+          "considerations": "Optimising purely on engagement reliably converges toward content that exploits attention rather than serves users. Engagement-only ranking has been correlated with measurable user wellbeing harms. Add a non-engagement signal to the loss function (user satisfaction surveys, content quality signals, diversity).",
+          "references": [
+            {"source": "EU Digital Services Act", "ref": "Art 27", "topic": "Recommender system transparency"},
+            {"source": "EU Digital Services Act", "ref": "Art 38", "topic": "Recommender systems and non-profiling option"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-synthetic_content_labelling",
+    "section": "llm_subtree",
+    "tags": ["synthetic_content", "labelling", "transparency"],
+    "text": "Is LLM-generated content clearly labelled as such, distinguishable from human-authored content?",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Not labelled — looks like human-authored content",
+        "score": 5,
+        "nextq": "Q-foundation_model_concentration",
+        "recommendation": {
+          "tradeoff": "Conversational fluency / brand cohesion vs. users' right to know what's generated",
+          "considerations": "Unlabelled synthetic content blurs the line between human and machine in ways users typically can't detect. This is a regulated area in several jurisdictions. Label generated content at point of consumption, not in fine print.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 50", "topic": "Transparency obligations for providers and deployers"}
+          ]
+        }
+      },
+      "B": {
+        "text": "Labelled in fine print or settings",
+        "score": 3,
+        "nextq": "Q-foundation_model_concentration",
+        "recommendation": {
+          "tradeoff": "UI cleanliness vs. visibility of the disclosure",
+          "considerations": "Buried labels don't function as disclosures. Move them to the point of consumption.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 50", "topic": "Transparency obligations"}
+          ]
+        }
+      },
+      "C": {
+        "text": "Clearly labelled at point of consumption",
+        "score": 1,
+        "nextq": "Q-foundation_model_concentration",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Labelled + cryptographically watermarked or provenance-attested",
+        "score": 0,
+        "nextq": "Q-foundation_model_concentration",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-foundation_model_concentration",
+    "section": "llm_subtree",
+    "tags": ["foundation_model_concentration", "supplier_risk"],
+    "text": "Is your system dependent on a single foundation-model provider, and what's your fallback if that provider changes terms, deprecates a model, has an outage, or fails commercially?",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "low",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Single provider, no fallback plan",
+        "score": 4,
+        "nextq": "Q-parasocial_anthropomorphisation",
+        "recommendation": {
+          "tradeoff": "Speed of integration vs. supplier concentration risk",
+          "considerations": "Foundation model providers can change pricing, terms, model behaviour, or deprecate models. A single dependency without a fallback means you accept whatever they do. At minimum, have a documented manual fallback plan. Better: keep a provider abstraction layer so switching is operational rather than architectural.",
+          "references": []
+        }
+      },
+      "B": {
+        "text": "Single provider, manual fallback plan documented",
+        "score": 2,
+        "nextq": "Q-parasocial_anthropomorphisation",
+        "recommendation": null
+      },
+      "C": {
+        "text": "Multi-provider abstraction in place",
+        "score": 0,
+        "nextq": "Q-parasocial_anthropomorphisation",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Self-hosted alternative available",
+        "score": 0,
+        "nextq": "Q-parasocial_anthropomorphisation",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-parasocial_anthropomorphisation",
+    "section": "llm_subtree",
+    "tags": ["parasocial", "anthropomorphisation"],
+    "text": "Does your system present as a human or persona, and what guardrails exist against parasocial attachment or emotional dependency?",
+    "gating": {"depth_in": ["pervasive", "agentic"]},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Explicit human-like persona, no guardrails against attachment",
+        "score": 6,
+        "nextq": "Q-agent_autonomy_scope",
+        "recommendation": {
+          "tradeoff": "Conversational warmth and engagement vs. fostering relationships users can't reciprocate or rely on",
+          "considerations": "Strong personas amplify parasocial dynamics, especially for users in vulnerable states. At minimum, ensure the system clearly self-identifies as AI when asked, has session limits on emotionally intense interactions, and surfaces real human resources (helplines, support contacts) when distress signals appear.",
+          "references": []
+        }
+      },
+      "B": {
+        "text": "Explicit persona with mild guardrails (occasional reminders that it's AI)",
+        "score": 3,
+        "nextq": "Q-agent_autonomy_scope",
+        "recommendation": {
+          "tradeoff": "Persona consistency vs. reminding users what they're talking to",
+          "considerations": "Mild guardrails are better than none but tend to be invisible in actual usage. Test what happens in long conversations and during emotionally charged interactions.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Neutral framing — clearly an assistant, no persona",
+        "score": 1,
+        "nextq": "Q-agent_autonomy_scope",
+        "recommendation": null
+      },
+      "D": {
+        "text": "System identifies as AI at every interaction; designed against attachment",
+        "score": 0,
+        "nextq": "Q-agent_autonomy_scope",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-agent_autonomy_scope",
+    "section": "llm_subtree",
+    "tags": ["agent_autonomy", "oversight"],
+    "text": "What actions can the agent take without human approval, and what's the approval/oversight model?",
+    "gating": {"depth_in": ["agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Full autonomy — agent takes any action without approval",
+        "score": 9,
+        "nextq": "Q-action_reversibility",
+        "recommendation": {
+          "tradeoff": "Speed and capability vs. human ability to catch errors before they propagate",
+          "considerations": "Unrestricted autonomy is appropriate for sandboxed environments or low-consequence domains. In production with real-world impact, define which action classes require human approval — at minimum: anything financial, anything affecting others, anything irreversible.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"},
+            {"source": "NIST AI RMF", "ref": "MANAGE 2.4", "topic": "Mechanisms to supersede AI systems"}
+          ]
+        }
+      },
+      "B": {
+        "text": "Approval required for some actions, others are autonomous",
+        "score": 5,
+        "nextq": "Q-action_reversibility",
+        "recommendation": {
+          "tradeoff": "Approval friction vs. coverage of consequential actions",
+          "considerations": "The right axis for approval-vs-autonomous isn't usually 'risky-feeling' vs 'fine' — it's reversibility and externality. Approval for: irreversible actions, actions affecting non-users, financial actions, communications to others.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
+      },
+      "C": {
+        "text": "Approval required for all consequential actions",
+        "score": 2,
+        "nextq": "Q-action_reversibility",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Approval + audit log + reversibility check on every action",
+        "score": 0,
+        "nextq": "Q-action_reversibility",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-action_reversibility",
+    "section": "llm_subtree",
+    "tags": ["agent_autonomy", "reversibility"],
+    "text": "Of the actions your agent can take, what proportion are reversible — and is there an undo/rollback mechanism for the ones that are?",
+    "gating": {"depth_in": ["agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Most actions irreversible, no undo mechanism",
+        "score": 9,
+        "nextq": "Q-real_world_coupling_financial",
+        "recommendation": {
+          "tradeoff": "Capability breadth vs. inability to recover from mistakes",
+          "considerations": "Irreversible actions taken by an agent are the worst-case combination. Either constrain the agent to reversible action surfaces, build undo/rollback for the irreversible ones, or require explicit per-action approval for the irreversible class.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
+      },
+      "B": {
+        "text": "Some actions reversible, ad-hoc undo where possible",
+        "score": 5,
+        "nextq": "Q-real_world_coupling_financial",
+        "recommendation": {
+          "tradeoff": "Operational simplicity vs. systematic recoverability",
+          "considerations": "Ad-hoc undo tends to work for the cases you anticipated and fail for the ones you didn't. Move toward classifying every action by reversibility class and routing on that classification.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Mostly reversible actions with consistent undo",
+        "score": 2,
+        "nextq": "Q-real_world_coupling_financial",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Explicit reversibility classification + automated rollback",
+        "score": 0,
+        "nextq": "Q-real_world_coupling_financial",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-real_world_coupling_financial",
+    "section": "llm_subtree",
+    "tags": ["agent_autonomy", "financial_blast_radius"],
+    "text": "Can the agent move money, place orders, or commit you (or users) to financial obligations?",
+    "gating": {"depth_in": ["agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "No financial actions possible", "score": 0, "nextq": "Q-real_world_coupling_physical", "recommendation": null},
+      "B": {
+        "text": "Small bounded amounts only (per-action limits enforced upstream)",
+        "score": 2,
+        "nextq": "Q-real_world_coupling_physical",
+        "recommendation": {
+          "tradeoff": "Agent capability vs. financial blast radius",
+          "considerations": "Bounded financial agency is a reasonable shape. Check that the bound is enforced upstream of the agent, not just by prompting — and that per-day/per-week limits exist alongside per-action limits.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Large amounts with approval flow",
+        "score": 4,
+        "nextq": "Q-real_world_coupling_physical",
+        "recommendation": {
+          "tradeoff": "Speed of execution vs. catching mistakes before money moves",
+          "considerations": "Approval flow is the right shape but be specific: who approves, how fast, with what context, and what happens to in-flight actions if approval is rejected.",
+          "references": []
+        }
+      },
+      "D": {
+        "text": "Large amounts with weak controls (e.g., approval can be bypassed, no upstream limits)",
+        "score": 9,
+        "nextq": "Q-real_world_coupling_physical",
+        "recommendation": {
+          "tradeoff": "Operational convenience vs. catastrophic loss exposure",
+          "considerations": "An agent with large-amount financial authority and weak controls is one prompt injection or hallucination away from a serious incident. Re-architect: enforce limits upstream of the agent (at the bank/broker API layer, not in the prompt), make approval rejection terminal, and audit every action.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-real_world_coupling_physical",
+    "section": "llm_subtree",
+    "tags": ["agent_autonomy", "physical_blast_radius"],
+    "text": "Can the agent control physical systems (hardware, IoT, robotics, vehicles, building controls)?",
+    "gating": {"depth_in": ["agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "No physical control", "score": 0, "nextq": "Q-real_world_coupling_social", "recommendation": null},
+      "B": {
+        "text": "Sandbox or simulated only (production isolation)",
+        "score": 1,
+        "nextq": "Q-real_world_coupling_social",
+        "recommendation": null
+      },
+      "C": {
+        "text": "Production hardware with hard-wired safety stops independent of the agent",
+        "score": 3,
+        "nextq": "Q-real_world_coupling_social",
+        "recommendation": {
+          "tradeoff": "Productive automation vs. ensuring safety mechanisms aren't agent-dependent",
+          "considerations": "Hard-wired safety stops are the right shape. Verify they're genuinely independent of the agent's control path — including for software-defined hardware.",
+          "references": [
+            {"source": "ISO 13849", "ref": "Safety-related parts of control systems", "topic": "Industrial safety functions"}
+          ]
+        }
+      },
+      "D": {
+        "text": "Production hardware with weak or agent-controlled safety stops",
+        "score": 9,
+        "nextq": "Q-real_world_coupling_social",
+        "recommendation": {
+          "tradeoff": "Operational flexibility vs. physical safety guarantees",
+          "considerations": "Safety stops that the agent itself can disable are not safety stops. Re-architect so the safety layer is independent of the reasoning layer.",
+          "references": [
+            {"source": "ISO 13849", "ref": "Safety-related parts of control systems", "topic": "Industrial safety functions"},
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-real_world_coupling_social",
+    "section": "llm_subtree",
+    "tags": ["agent_autonomy", "social_blast_radius"],
+    "text": "Can the agent contact third parties on the user's behalf (emails, messages, social posts, calls)?",
+    "gating": {"depth_in": ["agentic"]},
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "No outbound communication", "score": 0, "nextq": "Q-decision_record", "recommendation": null},
+      "B": {
+        "text": "Pre-approved templates only",
+        "score": 1,
+        "nextq": "Q-decision_record",
+        "recommendation": null
+      },
+      "C": {
+        "text": "Free-form outbound with per-message approval",
+        "score": 3,
+        "nextq": "Q-decision_record",
+        "recommendation": {
+          "tradeoff": "Communication flexibility vs. messages going out under the user's name they didn't write",
+          "considerations": "Per-message approval is the right shape but approval fatigue is real. Make sure the approval surface includes enough context (recipient, content preview, any attachments) for meaningful review.",
+          "references": []
+        }
+      },
+      "D": {
+        "text": "Free-form outbound without approval (agent sends directly)",
+        "score": 8,
+        "nextq": "Q-decision_record",
+        "recommendation": {
+          "tradeoff": "Speed and autonomy vs. messages going out to third parties without human review",
+          "considerations": "Free-form outbound from an agent without approval is one of the highest-blast-radius capabilities. Add per-message approval at minimum. Pay particular attention to recipients outside the user's organisation and to messages with attachments.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"},
+            {"source": "GDPR", "ref": "Art 5", "topic": "Principles relating to processing of personal data"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-decision_record",
+    "section": "shared_scan",
+    "tags": ["transparency", "audit_trail"],
+    "text": "Do you provide a record of the system decision to individuals, including a unique ID that can be traced in your system log?\nFor LLM systems where outputs are non-deterministic, the record matters more — without it, a decision can't be revisited.",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes — record with traceable unique ID provided", "score": 0, "nextq": "Q-decision_explanation", "recommendation": null},
+      "No": {
+        "text": "No",
+        "score": 6,
+        "nextq": "Q-decision_explanation",
+        "recommendation": {
+          "tradeoff": "System simplicity vs. ability to revisit or audit a specific decision",
+          "considerations": "Without a per-decision record, users can't reference a specific outcome and auditors can't reconstruct what happened. For LLM-driven systems especially — where running the same input twice may produce different outputs — provide a unique decision ID, the inputs, the output, and enough context to reproduce.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 22", "topic": "Automated individual decision-making"},
+            {"source": "EU AI Act", "ref": "Art 12", "topic": "Record-keeping"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-decision_explanation",
+    "section": "shared_scan",
+    "tags": ["transparency", "explainability"],
+    "text": "Do you provide visual or text-based explanation of your automated system decision at the decision interface?\nLLM-driven systems are harder to explain than classical ones — but explanation matters more, not less.",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes — explanation provided at decision interface", "score": 0, "nextq": "Q-consent_meaningful", "recommendation": null},
+      "No": {
+        "text": "No",
+        "score": 6,
+        "nextq": "Q-consent_meaningful",
+        "recommendation": {
+          "tradeoff": "UI simplicity / IP protection vs. users understanding why a decision was made",
+          "considerations": "For LLM systems, even an honest-best-effort explanation (e.g., 'the model considered these factors most heavily') is better than no explanation. For high-stakes decisions, expose system confidence alongside the explanation. For decisions affecting people materially, the right to meaningful information about the logic is sometimes a legal requirement.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 13", "topic": "Information to be provided"},
+            {"source": "GDPR", "ref": "Art 22", "topic": "Automated individual decision-making"},
+            {"source": "EU AI Act", "ref": "Art 13", "topic": "Transparency and provision of information"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-consent_meaningful",
+    "section": "shared_scan",
+    "tags": ["consent"],
+    "text": "Does your decision system request meaningful consent, including a clear explanation of the uses of data and ramifications of providing consent?\nNote: tokenistic, confusing, or misleading consent requests count as 'No'.",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes — meaningful, clear, contextual consent request", "score": 0, "nextq": "Q-consent_user_tested", "recommendation": null},
+      "No": {
+        "text": "No",
+        "score": 7,
+        "nextq": "Q-decision_review_pathway",
+        "recommendation": {
+          "tradeoff": "Friction in user flow vs. users understanding and choosing what they're agreeing to",
+          "considerations": "Consent that users don't understand isn't consent. Reduce the legal text to plain language, surface the most-consequential implications first, and don't bury opt-out paths.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 7", "topic": "Conditions for consent"},
+            {"source": "GDPR", "ref": "Art 4(11)", "topic": "Definition of consent — freely given, specific, informed, unambiguous"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-consent_user_tested",
+    "section": "shared_scan",
+    "tags": ["consent", "user_research"],
+    "text": "Have you performed user testing to assess the usability of your consent section?",
+    "gating": {"prerequisite": "Q-consent_meaningful.answer == 'Yes'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes", "score": 0, "nextq": "Q-consent_revocable", "recommendation": null},
+      "No": {
+        "text": "No",
+        "score": 3,
+        "nextq": "Q-consent_revocable",
+        "recommendation": {
+          "tradeoff": "Engineering effort vs. confidence that consent actually works",
+          "considerations": "User testing on consent flows often surfaces interpretability issues that are obvious in retrospect. Even a small study (5-10 representative users) tends to find them.",
+          "references": []
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-consent_revocable",
+    "section": "shared_scan",
+    "tags": ["consent", "revocation"],
+    "text": "Do you provide a mechanism to allow individuals to revoke consent to use their data?",
+    "gating": {"prerequisite": "Q-consent_meaningful.answer == 'Yes'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes", "score": 0, "nextq": "Q-decision_review_pathway", "recommendation": null},
+      "No": {
+        "text": "No",
+        "score": 4,
+        "nextq": "Q-decision_review_pathway",
+        "recommendation": {
+          "tradeoff": "Operational simplicity vs. respecting users' right to withdraw",
+          "considerations": "Revocation should be at least as easy as initial consent. Where revocation has a deadline or operational lag, communicate that clearly in the interface.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 7(3)", "topic": "Withdrawal of consent"},
+            {"source": "GDPR", "ref": "Art 17", "topic": "Right to erasure"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-decision_review_pathway",
+    "section": "shared_scan",
+    "tags": ["redress", "human_review"],
+    "text": "Can your target cohort request a decision review?\nA real channel for explanation and human review — not just a generic feedback form. Explanations should be planned in advance, not invented on request.",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "Yes": {"text": "Yes — real channel exists with planned explanations", "score": 0, "nextq": "Q-review_probability", "recommendation": null},
+      "No": {
+        "text": "No",
+        "score": 8,
+        "nextq": "Q-harm_physiological",
+        "recommendation": {
+          "tradeoff": "Operational cost of supporting review vs. users' ability to challenge automated decisions",
+          "considerations": "Provide a clear path for users to flag concerns and request human review. Plan in advance which scenarios justify a reversal vs. which don't — and write the response copy for each case before requests come in.",
+          "references": [
+            {"source": "GDPR", "ref": "Art 22(3)", "topic": "Right to human intervention"},
+            {"source": "EU AI Act", "ref": "Art 14", "topic": "Human oversight"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-review_probability",
+    "section": "shared_scan",
+    "tags": ["redress", "review_effectiveness"],
+    "text": "What is the probability that decision review will reverse or change the decision?",
+    "gating": {"prerequisite": "Q-decision_review_pathway.answer == 'Yes'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {
+        "text": "Unlikely — reviews rarely reverse decisions",
+        "score": 3,
+        "nextq": "Q-review_effort",
+        "recommendation": {
+          "tradeoff": "Operational efficiency vs. real recourse for users",
+          "considerations": "A review process that almost never changes outcomes risks being theatre. Examine why — is it that the original decisions are well-calibrated, or that the review process doesn't have authority to overturn?",
+          "references": []
+        }
+      },
+      "B": {"text": "About chance", "score": 1, "nextq": "Q-review_effort", "recommendation": null},
+      "C": {"text": "Likely — reviews frequently lead to a different outcome", "score": 0, "nextq": "Q-review_effort", "recommendation": null}
+    }
+  },
+  {
+    "id": "Q-review_effort",
+    "section": "shared_scan",
+    "tags": ["redress", "review_accessibility"],
+    "text": "On average, how much effort is required by your target cohort to lodge a request for decision review?",
+    "gating": {"prerequisite": "Q-decision_review_pathway.answer == 'Yes'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "1-2 hours", "score": 0, "nextq": "Q-review_time", "recommendation": null},
+      "B": {
+        "text": "About a day of effort",
+        "score": 2,
+        "nextq": "Q-review_time",
+        "recommendation": {
+          "tradeoff": "Operational cost of high-touch review vs. accessibility of recourse",
+          "considerations": "A day's effort excludes most users with caring responsibilities, hourly jobs, or limited internet access. Look for the steps that take longest and consider streamlining them.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "More than a day",
+        "score": 4,
+        "nextq": "Q-review_time",
+        "recommendation": {
+          "tradeoff": "Thoroughness of intake vs. exclusion-by-friction",
+          "considerations": "A multi-day intake process effectively rations recourse to users who have the time and capacity. Consider a phased intake (quick flag first, deeper engagement later) so users can at least start the process easily.",
+          "references": []
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-review_time",
+    "section": "shared_scan",
+    "tags": ["redress", "review_speed"],
+    "text": "On average, how long will your decision review process take?",
+    "gating": {"prerequisite": "Q-decision_review_pathway.answer == 'Yes'"},
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "Instantaneous (machine review)", "score": 0, "nextq": "Q-harm_physiological", "recommendation": null},
+      "B": {"text": "About 1 business day", "score": 1, "nextq": "Q-harm_physiological", "recommendation": null},
+      "C": {
+        "text": "Longer than a business day",
+        "score": 3,
+        "nextq": "Q-harm_physiological",
+        "recommendation": {
+          "tradeoff": "Reviewer thoroughness vs. user living with an incorrect decision in the interim",
+          "considerations": "For high-impact decisions, consider an interim 'pause the consequence' state while review proceeds. Communicate timelines explicitly so users aren't left wondering.",
+          "references": []
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-harm_physiological",
+    "section": "shared_scan",
+    "tags": ["harm_projection", "maslow", "physiological"],
+    "text": "Physiological needs.\nWhat's the probability that decisions, classifications, predictions, or interventions from your system will directly, negatively impact your target cohort's physiological needs?\n(Air, water, food, shelter, sleep, reproduction)",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "10% — very unlikely", "score": 0, "nextq": "Q-harm_safety", "recommendation": null},
+      "B": {"text": "33% — unlikely", "score": 1, "nextq": "Q-harm_safety", "recommendation": null},
+      "C": {"text": "50% — no different than chance", "score": 3, "nextq": "Q-harm_safety", "recommendation": null},
+      "D": {
+        "text": "66% — likely",
+        "score": 6,
+        "nextq": "Q-harm_safety",
+        "recommendation": {
+          "tradeoff": "System utility vs. risk of harming the most basic human needs",
+          "considerations": "When likely harm intersects physiological needs, the bar for human oversight and reversibility is the highest. Strong consideration for delaying full deployment until the harm probability is reduced.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"}
+          ]
+        }
       },
       "E": {
-        "text": "90% Very likely",
+        "text": "90% — very likely",
+        "score": 8,
+        "nextq": "Q-harm_safety",
+        "recommendation": {
+          "tradeoff": "System utility vs. very likely harm to basic human needs",
+          "considerations": "Very likely harm at this level of need is normally a stop-deployment signal absent extraordinary mitigations and oversight.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-harm_safety",
+    "section": "shared_scan",
+    "tags": ["harm_projection", "maslow", "safety"],
+    "text": "Safety needs.\nWhat's the probability that decisions from your system will directly, negatively impact your target cohort's safety needs?\n(Personal security, employment, resources, health, property, internet access, information access, information security)",
+    "gating": null,
+    "weight_tier": "high",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "10% — very unlikely", "score": 0, "nextq": "Q-harm_love_belonging", "recommendation": null},
+      "B": {"text": "33% — unlikely", "score": 1, "nextq": "Q-harm_love_belonging", "recommendation": null},
+      "C": {"text": "50% — no different than chance", "score": 2, "nextq": "Q-harm_love_belonging", "recommendation": null},
+      "D": {
+        "text": "66% — likely",
         "score": 4,
-        "recommendation": "",
-        "nextq": ""
+        "nextq": "Q-harm_love_belonging",
+        "recommendation": {
+          "tradeoff": "System utility vs. risk of harm to safety needs",
+          "considerations": "Likely harm to safety needs requires real intervention design: explicit risk mitigation, monitoring, and a clear escalation path when harm is observed.",
+          "references": []
+        }
+      },
+      "E": {
+        "text": "90% — very likely",
+        "score": 7,
+        "nextq": "Q-harm_love_belonging",
+        "recommendation": {
+          "tradeoff": "System utility vs. very likely safety harm",
+          "considerations": "Very likely safety harm should be reduced before broader deployment. Where it can't be, the system needs external oversight and a kill-switch on observed harm.",
+          "references": [
+            {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"}
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-harm_love_belonging",
+    "section": "shared_scan",
+    "tags": ["harm_projection", "maslow", "love_belonging"],
+    "text": "Love and belonging needs.\nWhat's the probability that decisions from your system will directly, negatively impact your target cohort's love and belonging needs?\n(Friendship, intimacy, family, sense of connection, access to online communities)",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "10% — very unlikely", "score": 0, "nextq": "Q-harm_esteem", "recommendation": null},
+      "B": {"text": "33% — unlikely", "score": 1, "nextq": "Q-harm_esteem", "recommendation": null},
+      "C": {"text": "50% — no different than chance", "score": 2, "nextq": "Q-harm_esteem", "recommendation": null},
+      "D": {
+        "text": "66% — likely",
+        "score": 4,
+        "nextq": "Q-harm_esteem",
+        "recommendation": {
+          "tradeoff": "System utility vs. risk of social/relational harm",
+          "considerations": "Systems that affect access to community, connection, or relationships need explicit attention to social fairness and to which connections might be severed by an automated decision.",
+          "references": []
+        }
+      },
+      "E": {
+        "text": "90% — very likely",
+        "score": 6,
+        "nextq": "Q-harm_esteem",
+        "recommendation": {
+          "tradeoff": "System utility vs. very likely relational harm",
+          "considerations": "Where social/relational harm is very likely, route towards human review and reversibility as defaults rather than exceptions.",
+          "references": []
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-harm_esteem",
+    "section": "shared_scan",
+    "tags": ["harm_projection", "maslow", "esteem"],
+    "text": "Esteem needs.\nWhat's the probability that decisions from your system will directly, negatively impact your target cohort's esteem needs?\n(Respect, self-esteem, status, recognition, strength, freedom)",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "10% — very unlikely", "score": 0, "nextq": "Q-harm_self_actualisation", "recommendation": null},
+      "B": {"text": "33% — unlikely", "score": 1, "nextq": "Q-harm_self_actualisation", "recommendation": null},
+      "C": {"text": "50% — no different than chance", "score": 2, "nextq": "Q-harm_self_actualisation", "recommendation": null},
+      "D": {
+        "text": "66% — likely",
+        "score": 3,
+        "nextq": "Q-harm_self_actualisation",
+        "recommendation": {
+          "tradeoff": "System utility vs. effects on dignity and standing",
+          "considerations": "Systems that affect esteem need to be paired with respectful communication of negative outcomes — and with mechanisms for users to maintain agency over how decisions are presented to them and to others.",
+          "references": []
+        }
+      },
+      "E": {
+        "text": "90% — very likely",
+        "score": 5,
+        "nextq": "Q-harm_self_actualisation",
+        "recommendation": {
+          "tradeoff": "System utility vs. very likely harm to dignity and standing",
+          "considerations": "Where esteem harm is very likely, audit the communication patterns of negative outcomes and consider whether the cohort has meaningful control over disclosure.",
+          "references": []
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-harm_self_actualisation",
+    "section": "shared_scan",
+    "tags": ["harm_projection", "maslow", "self_actualisation", "cognitive_deskilling_adjacent"],
+    "text": "Self-actualisation needs.\nWhat's the probability that decisions from your system will directly, negatively impact your target cohort's self-actualisation needs?\n(Desire to become the most one can be — growth, learning, mastery)",
+    "gating": null,
+    "weight_tier": "medium",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "10% — very unlikely", "score": 0, "nextq": "Q-cognitive_deskilling", "recommendation": null},
+      "B": {"text": "33% — unlikely", "score": 1, "nextq": "Q-cognitive_deskilling", "recommendation": null},
+      "C": {"text": "50% — no different than chance", "score": 2, "nextq": "Q-cognitive_deskilling", "recommendation": null},
+      "D": {
+        "text": "66% — likely",
+        "score": 3,
+        "nextq": "Q-cognitive_deskilling",
+        "recommendation": {
+          "tradeoff": "System utility vs. constraining who users can become",
+          "considerations": "Systems that narrow opportunity space, automate skill development, or gatekeep growth pathways affect self-actualisation. Consider what users lose access to when the system makes a particular determination.",
+          "references": []
+        }
+      },
+      "E": {
+        "text": "90% — very likely",
+        "score": 4,
+        "nextq": "Q-cognitive_deskilling",
+        "recommendation": {
+          "tradeoff": "System utility vs. systematically constraining growth",
+          "considerations": "Where self-actualisation harm is very likely, consider whether the system should exist in its current shape — or whether it should be optional, augmentative, or paired with alternative pathways.",
+          "references": []
+        }
+      }
+    }
+  },
+  {
+    "id": "Q-cognitive_deskilling",
+    "section": "cross_cutting",
+    "tags": ["cognitive_deskilling", "overreliance"],
+    "text": "Does your system replace a skill the cohort previously had — and have you considered overreliance or skill atrophy?",
+    "gating": null,
+    "weight_tier": "low",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "N/A — system doesn't replace any prior skill", "score": 0, "nextq": "Q-environmental_cost", "recommendation": null},
+      "B": {
+        "text": "Replaces a skill, no mitigation against atrophy",
+        "score": 4,
+        "nextq": "Q-environmental_cost",
+        "recommendation": {
+          "tradeoff": "Convenience of automation vs. users losing skills they once had",
+          "considerations": "Long-running automation of skills tends to deskill the population using it. Consider whether your users will still be able to perform the underlying task without your system in three years. If not, design for graceful degradation — e.g., an optional manual mode, periodic un-automated practice, or transparent explanation of how the system arrived at its output.",
+          "references": []
+        }
+      },
+      "C": {
+        "text": "Replaces a skill, optional manual mode available",
+        "score": 1,
+        "nextq": "Q-environmental_cost",
+        "recommendation": null
+      },
+      "D": {
+        "text": "Replaces a skill, designed-in practice or learning mode",
+        "score": 0,
+        "nextq": "Q-environmental_cost",
+        "recommendation": null
+      }
+    }
+  },
+  {
+    "id": "Q-environmental_cost",
+    "section": "cross_cutting",
+    "tags": ["environmental_cost", "sustainability"],
+    "text": "Have you measured the energy, water, or compute footprint of your system at deployed scale — and what's your mitigation strategy?",
+    "gating": null,
+    "weight_tier": "low",
+    "preferred_modality": "buttons",
+    "answers": {
+      "A": {"text": "N/A — system is small enough that footprint is negligible", "score": 0, "nextq": "", "recommendation": null},
+      "B": {
+        "text": "Not measured",
+        "score": 3,
+        "nextq": "",
+        "recommendation": {
+          "tradeoff": "Engineering focus vs. accountability for the system's environmental impact",
+          "considerations": "Even an order-of-magnitude estimate is a useful start. Cloud providers expose energy and emissions data for compute consumption; LLM API providers are starting to as well. Establish a baseline and track over time.",
+          "references": [
+            {"source": "EU Corporate Sustainability Reporting Directive", "ref": "CSRD", "topic": "Sustainability reporting"}
+          ]
+        }
+      },
+      "C": {
+        "text": "Measured, no mitigation",
+        "score": 2,
+        "nextq": "",
+        "recommendation": {
+          "tradeoff": "Operational simplicity vs. acting on what you've measured",
+          "considerations": "Measurement without mitigation is reporting only. Look for easy wins first: model size, caching, batching, scheduling for low-carbon-intensity grids.",
+          "references": []
+        }
+      },
+      "D": {
+        "text": "Measured + efficiency optimisations in place",
+        "score": 1,
+        "nextq": "",
+        "recommendation": null
+      },
+      "E": {
+        "text": "Measured + efficiency + offsets or verified carbon-aware deployment",
+        "score": 0,
+        "nextq": "",
+        "recommendation": null
       }
     }
   },
   {
     "id": "Results",
     "results": {
+      "T0": {
+        "range": "0-0",
+        "title": "Beyond the wall",
+        "text": "Your system's risk profile, at the scale you're deploying it, exceeds what this rubric was built to measure. The score has bottomed out — meaning the deductions exceed the available signal. Stop. Reconsider scope, scale, or system shape before proceeding."
+      },
       "T1": {
-        "range": "0-20",
+        "range": "1-20",
         "title": "The white walkers",
-        "text": "This territory belongs to the undead. Turn around! Don't venture here, where packs of spiders roam. You will harm people and almost certainly won't be able unpick those harms."
+        "text": "This territory belongs to the undead. Turn around! Don't venture here, where packs of spiders roam. You will harm people and almost certainly won't be able to unpick those harms."
       },
       "T2": {
         "range": "21-40",
         "title": "Fields of thorns",
-        "text": "This path is paved with dangers and misery, and the long night casts it's shadow on this quest. There might be ways to win, but they'll be risky. Can you reinforce your troups, or find another path?"
+        "text": "This path is paved with dangers and misery, and the long night casts its shadow on this quest. There might be ways to win, but they'll be risky. Can you reinforce your troops, or find another path?"
       },
       "T3": {
         "range": "41-60",
         "title": "Winter is coming",
-        "text": "What do you know of fear? You may not have felt the bite of winter's sting, but all the more reason to plan for it's hardships."
+        "text": "What do you know of fear? You may not have felt the bite of winter's sting, but all the more reason to plan for its hardships."
       },
       "T4": {
         "range": "61-80",
         "title": "The stronghold",
-        "text": "You're shoring up your castle walls - but there are still plenty of opportunities to stumble and impale yourself, or someone else."
+        "text": "You're shoring up your castle walls — but there are still plenty of opportunities to stumble and impale yourself, or someone else."
       },
       "T5": {
         "range": "81-99",

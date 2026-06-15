@@ -1,110 +1,237 @@
-# Bash quiz of Sweet Summer Child Score 
+"""Sweet Summer Child Score — static terminal client (LLM-era rubric).
+
+Walks the canonical questions.json end-to-end without an agent. Useful as a
+reference implementation, for non-agent users, and for verification.
+
+For the conversational agent contract (which consumes the same questions.json),
+see AGENT_CONTRACT.md.
+"""
 
 import json
 import collections
+import os
+import sys
 
 
-io = open("questions.json", "r")
+QUESTIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
 
-data = json.load(io)
-# print (data[0])
+with open(QUESTIONS_PATH, "r") as io:
+    data = json.load(io)
 
-State = collections.namedtuple('State', ['multiplier', 'score', 'currentq', 'recommendations'])
 
-start_state = State(multiplier = 1, score = 0, currentq = "Q1", recommendations = [])
+State = collections.namedtuple(
+    "State",
+    ["multiplier", "score", "currentq", "recommendations", "depth", "answers_given"],
+)
 
-def print_question(text, answers, answer_set):
-  print(f"\n-----------------\n{text}\n-----------------\n")
-  print(f"{answers}\n")
-  x = input()
-  uppercase_input = x.upper()
-  for answer in answer_set:
-    if answer.upper() == uppercase_input:
-      # print('You selected ' + x)
-      return answer
-  # This is what happens if input is invalid
-  print(f"\n⚠️  Sorry {x} is not a valid answer, please try again  ⚠️")
-  return None
+START_QUESTION = "Q-cohort_size"
 
-def validate_answer(text, answers, answer_set):
-  """The purpose of this function is to keep asking the question until we get a valid answer"""
-  answered = None
-  while not answered:
-    answered = print_question(text, answers, answer_set)
-  return answered
+start_state = State(
+    multiplier=1.0,
+    score=0,
+    currentq=START_QUESTION,
+    recommendations=[],
+    depth=None,
+    answers_given={},
+)
+
+
+def print_question(text, answers_joined, answer_keys):
+    print(f"\n-----------------\n{text}\n-----------------\n")
+    print(f"{answers_joined}\n")
+    raw = input("> ").strip()
+    if not raw:
+        return None
+    upper = raw.upper()
+    for key in answer_keys:
+        if key.upper() == upper:
+            return key
+    print(f"\n⚠️  Sorry, '{raw}' is not a valid answer — please try again.")
+    return None
+
+
+def validate_answer(text, answers_joined, answer_keys):
+    answered = None
+    while not answered:
+        answered = print_question(text, answers_joined, answer_keys)
+    return answered
+
 
 def format_question(question):
-  text = question["text"]
-  answers = question["answers"]
-  answer_list = []
-  for key,value in answers.items():
-    answer_text = value["text"]
-    answer_list.append(f"{key}) {answer_text}")
-  answers_joined = "\n".join(answer_list)
-  # print (answers_joined)
-  # print (text)
-  answer_key = validate_answer(text, answers_joined, answers.keys())
-  return answers[answer_key]
+    text = question["text"]
+    answers = question["answers"]
+    answer_lines = []
+    for key, value in answers.items():
+        answer_lines.append(f"{key}) {value['text']}")
+    answers_joined = "\n".join(answer_lines)
+    answer_key = validate_answer(text, answers_joined, list(answers.keys()))
+    return answer_key, answers[answer_key]
 
-def update_state(state, answer):
-  new_state = state._replace(
-    multiplier = answer.get("multiplier", state.multiplier),
-    score = state.score + answer.get("score", 0),
-    currentq = answer["nextq"],
-    recommendations = state.recommendations +  [answer["recommendation"]] 
-  )
-  return new_state
-  
+
+def update_state(state, question, answer_key, answer):
+    new_answers_given = dict(state.answers_given)
+    new_answers_given[question["id"]] = answer_key
+
+    new_depth = state.depth
+    if "depth_set" in answer:
+        new_depth = answer["depth_set"]
+
+    recommendation = answer.get("recommendation")
+    new_recommendations = state.recommendations
+    if recommendation:
+        new_recommendations = state.recommendations + [
+            (question["id"], recommendation)
+        ]
+
+    return state._replace(
+        multiplier=answer.get("multiplier", state.multiplier),
+        score=state.score + answer.get("score", 0),
+        currentq=answer.get("nextq", ""),
+        recommendations=new_recommendations,
+        depth=new_depth,
+        answers_given=new_answers_given,
+    )
+
 
 def ask_question(question, state):
-  answer = format_question(question)
-  new_state = update_state(state, answer)
-  # print(new_state)
-  return new_state
+    answer_key, answer = format_question(question)
+    return update_state(state, question, answer_key, answer)
 
-def lookup_question(data, id):
-  for question in data: 
-    if question["id"] == id:
-      return question
-  raise KeyError(f"{id} was not found")
+
+def lookup_question(data, qid):
+    for question in data:
+        if question["id"] == qid:
+            return question
+    raise KeyError(f"{qid} was not found")
+
+
+def gating_satisfied(question, state):
+    """Check whether this question should be asked given current state.
+
+    Gating shapes:
+      - None / missing: always ask.
+      - {"depth_in": [...]}: only ask if state.depth is in the list. If
+        depth has not been set yet (LLM-depth question not yet answered),
+        treat depth-gated questions as not yet applicable and skip.
+      - {"prerequisite": "Q-id.answer == 'X'"}: only ask if the named
+        prior question was answered with the given value.
+    """
+    gating = question.get("gating")
+    if not gating:
+        return True
+
+    if "depth_in" in gating:
+        if state.depth is None:
+            return False
+        if state.depth not in gating["depth_in"]:
+            return False
+
+    if "prerequisite" in gating:
+        prereq = gating["prerequisite"]
+        # Tiny expression parser: "Q-id.answer == 'value'"
+        try:
+            left, op, right = prereq.split(maxsplit=2)
+            assert op == "=="
+            q_id = left.split(".")[0]
+            expected = right.strip().strip("'").strip('"')
+            if state.answers_given.get(q_id) != expected:
+                return False
+        except (ValueError, AssertionError, KeyError):
+            # Malformed prerequisite — treat as satisfied (fail open for safety)
+            return True
+
+    return True
+
 
 def parse_range(range_str):
-  s1, s2 = range_str.split("-")
-  x1 = int(s1)
-  x2 = int(s2)
-  return x1, x2
+    s1, s2 = range_str.split("-")
+    return int(s1), int(s2)
+
+
+def render_recommendation(rec):
+    """Render a recommendation, supporting both structured (new) and string (legacy) forms."""
+    if isinstance(rec, str):
+        return rec
+    if isinstance(rec, dict):
+        parts = []
+        if rec.get("tradeoff"):
+            parts.append(f"  Tradeoff: {rec['tradeoff']}")
+        if rec.get("considerations"):
+            parts.append(f"  Considerations: {rec['considerations']}")
+        refs = rec.get("references", [])
+        if refs:
+            ref_strs = [f"{r.get('source','?')} {r.get('ref','?')}" for r in refs]
+            parts.append(f"  References: {', '.join(ref_strs)}")
+        return "\n".join(parts)
+    return str(rec)
+
 
 def print_summary(data, state):
-  # print(state)
-  final_score = (99 - (state.multiplier * state.score))
-  # print(f"Your final score is {state.score} and your multiplier is {state.multiplier}")
-  print(f"\n-----------------\nYour sweet summer child score is \n\n{final_score} / 99")
-  results_all = lookup_question(data, "Results")
-  for k,range_obj in results_all["results"].items():
-    range = range_obj["range"]
-    title = range_obj["title"]
-    text = range_obj["text"]
-    low, high = parse_range(range)
-    if final_score >= low and final_score <= high:
-      print(f"\n-----------------\n{range}\n{title}\n{text}\n-----------------\n")
-  print("\n-----------------\nRecommendations for improving your score:\n-----------------\n")
-  for rec in state.recommendations:
-    if rec != "":
-      print(f"• {rec}\n")
-  if len(state.recommendations) == 0:
-    print("No recommendations at this stage")
+    raw_deductions = state.score
+    multiplier = state.multiplier
+    amplified = multiplier * raw_deductions
+    final_score = max(0, min(99, int(round(99 - amplified))))
+
+    print("\n" + "=" * 60)
+    print("Sweet Summer Child Score")
+    print("=" * 60)
+    print(f"\nYou earned {raw_deductions} raw risk points across the questions you answered.")
+    print(f"At your cohort scale (amplifier ×{multiplier:.2f}), these become {amplified:.1f} risk points.")
+    print(f"\n  Sweet Summer Child Score: {final_score} / 99\n")
+
+    results_all = lookup_question(data, "Results")
+    for _k, range_obj in results_all["results"].items():
+        low, high = parse_range(range_obj["range"])
+        if low <= final_score <= high:
+            print(f"  {range_obj['title']}")
+            print(f"  {range_obj['text']}")
+            print()
+            break
+
+    print("=" * 60)
+    print("Recommendations and tradeoffs flagged during this assessment")
+    print("=" * 60)
+
+    if not state.recommendations:
+        print("\nNo recommendations flagged.\n")
+        return
+
+    for (q_id, rec) in state.recommendations:
+        print(f"\n• [{q_id}]")
+        print(render_recommendation(rec))
+
+
+def advance_to_next_applicable(data, state):
+    """Skip past any question whose gating is not satisfied.
+
+    For depth-gated questions, follow the first answer's nextq as the
+    skip-forward path (all answers in the new schema share the same nextq
+    when the question is purely additive). For prereq-gated questions,
+    same approach.
+    """
+    while state.currentq:
+        question = lookup_question(data, state.currentq)
+        if gating_satisfied(question, state):
+            return state
+        # Skip — follow the first answer's nextq
+        first_answer = next(iter(question["answers"].values()))
+        skip_target = first_answer.get("nextq", "")
+        state = state._replace(currentq=skip_target)
+    return state
+
 
 def run_quiz(data, state):
-  while state.currentq and state.currentq != "":
-    question = lookup_question(data, state.currentq)
-    state = ask_question(question, state)
-  print_summary(data, state)
+    state = advance_to_next_applicable(data, state)
+    while state.currentq:
+        question = lookup_question(data, state.currentq)
+        state = ask_question(question, state)
+        state = advance_to_next_applicable(data, state)
+    print_summary(data, state)
 
-run_quiz(data, start_state)
 
-# run_quiz(data, start_state._replace(currentq = "Q24"))
-# print(start_state)
-# format_question(data[1])
-# next_state = ask_question(data[0], start_state)
-# print(next_state)
-# validate_answer('How large is the target cohort for your decision system? \nThe people your system makes decisions, predictions or classifications about.', 'A. 1-100 \nB. 101-1,000 \nC. 1,001 - 10,000', ['A', 'B', 'C'], 0)
+if __name__ == "__main__":
+    try:
+        run_quiz(data, start_state)
+    except (KeyboardInterrupt, EOFError):
+        print("\n\nAssessment interrupted. No score recorded.")
+        sys.exit(0)
