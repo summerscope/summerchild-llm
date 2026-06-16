@@ -88,6 +88,11 @@ agent: Agent[str, str] = Agent(
     deps_type=str,
     output_type=str,
     instructions=default_system_prompt(),
+    # Give the agent multiple shots to recover from validation errors —
+    # e.g. when it guesses an answer key that isn't in the rubric. With the
+    # default (1) a single bad attempt bubbles up as ToolRetryError instead
+    # of letting the model self-correct.
+    retries=5,
 )
 
 
@@ -178,9 +183,18 @@ class SkipCanonicalArgs(BaseModel):
     )
 
 
+class LookupCanonicalArgs(BaseModel):
+    question_id: str = Field(description="A canonical question id, e.g. 'Q-llm_depth'.")
+
+
 class InferFromBraindumpArgs(BaseModel):
     question_id: str
-    inferred_answer_key: str
+    inferred_answer_key: str = Field(
+        description=(
+            "MUST be one of the exact keys in the question's answers dict — "
+            "use `lookup_canonical` first if you don't already know them."
+        )
+    )
     evidence: str = Field(description="Verbatim user excerpt that supports the inference.")
 
 
@@ -213,6 +227,28 @@ class AddAgentQuestionArgs(BaseModel):
 # ---------------------------------------------------------------------------
 # Phase 1 tools
 # ---------------------------------------------------------------------------
+
+
+@agent.tool(prepare=_phase_is(1))
+def lookup_canonical(ctx: RunContext[str], args: LookupCanonicalArgs) -> str:
+    """Inspect a canonical question's text + valid answer keys WITHOUT asking it.
+
+    Use before `infer_from_braindump` so you can pass an answer key that
+    actually exists in the rubric. Read-only — no side effects, no budget.
+    """
+    qid = args.question_id
+    if qid not in _deps(ctx).rubric:
+        raise ModelRetry(f"Unknown canonical question_id: {qid!r}")
+    q = _deps(ctx).rubric[qid]
+    lines = [f"Question {qid}: {q.text}", "", "Valid answer keys:"]
+    for key, ans in q.answers.items():
+        score_or_mult = ""
+        if ans.score is not None:
+            score_or_mult = f" [score={ans.score}]"
+        elif ans.multiplier is not None:
+            score_or_mult = f" [multiplier={ans.multiplier}]"
+        lines.append(f"  {key}) {ans.text}{score_or_mult}")
+    return "\n".join(lines)
 
 
 @agent.tool(prepare=_phase_is(1))

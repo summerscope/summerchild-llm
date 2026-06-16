@@ -16,3 +16,7 @@ export function stateEndpoint(conversationId: string): string {
 export function reportEndpoint(conversationId: string): string {
   return `${API_URL}/api/session/${conversationId}/report`;
 }
+
+export function pendingEndpoint(conversationId: string): string {
+  return `${API_URL}/api/session/${conversationId}/pending`;
+}

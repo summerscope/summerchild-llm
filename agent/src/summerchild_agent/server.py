@@ -208,6 +208,49 @@ async def session_state(conversation_id: str) -> JSONResponse:
     )
 
 
+@app.get("/api/session/{conversation_id}/pending")
+async def pending_question(conversation_id: str) -> JSONResponse:
+    """Return the currently-pending question (text + valid answer choices).
+
+    Frontend uses this to render button choices below the agent's last
+    message — so the user clicks an answer instead of typing it. Returns
+    null payload when nothing's pending.
+    """
+    deps = maybe_runtime(conversation_id)
+    if deps is None or deps.state.pending_question_id is None:
+        return JSONResponse({"pending": None})
+
+    qid = deps.state.pending_question_id
+    source = deps.state.pending_question_source
+    if source == "canonical":
+        q = deps.rubric[qid]
+        text = q.text
+        modality = q.preferred_modality
+        answers = q.answers
+    elif source == "agent-added" and qid in deps.state.added_questions:
+        q = deps.state.added_questions[qid]
+        text = q.text
+        modality = "buttons"
+        answers = q.answers
+    else:
+        return JSONResponse({"pending": None})
+
+    return JSONResponse(
+        {
+            "pending": {
+                "question_id": qid,
+                "source": source,
+                "text": text,
+                "preferred_modality": modality,
+                "answers": [
+                    {"key": key, "text": ans.text}
+                    for key, ans in answers.items()
+                ],
+            }
+        }
+    )
+
+
 @app.get("/api/session/{conversation_id}/report")
 async def session_report(conversation_id: str) -> Response:
     """Returns the markdown report for a finalised session. 404 until finalised."""
