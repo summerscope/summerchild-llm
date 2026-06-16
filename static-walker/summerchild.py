@@ -24,7 +24,7 @@ State = collections.namedtuple(
     ["multiplier", "score", "currentq", "recommendations", "depth", "answers_given"],
 )
 
-START_QUESTION = "Q-cohort_size"
+START_QUESTION = "Q-llm_depth"
 
 start_state = State(
     multiplier=1.0,
