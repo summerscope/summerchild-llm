@@ -78,14 +78,16 @@ agent: Agent[str, str] = Agent(
 
 
 @agent.system_prompt
-def _persona() -> str:
+def _persona(ctx: RunContext[str]) -> str:
     """Fetch the persona / behaviour rules from the Logfire managed variable.
 
-    Falls back to `DEFAULT_SYSTEM_PROMPT` in `managed_vars.py` until
-    `logfire.variables_push()` has registered the variable and the Logfire
-    UI has a published value for it. See `scripts/push_variables.py`.
+    Templated: the session's live bounds (shift budget fraction, soft +
+    hard question caps) are substituted into the prompt at resolve time
+    so the rules the model sees always match the runtime enforcement.
+    Falls back to `DEFAULT_SYSTEM_PROMPT` (with the same substitution
+    applied client-side) when Logfire isn't reachable.
     """
-    return resolve_system_prompt()
+    return resolve_system_prompt(_deps(ctx).bounds)
 
 
 def _deps(ctx: RunContext[str]) -> SessionDeps:

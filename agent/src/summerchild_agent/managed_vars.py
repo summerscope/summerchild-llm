@@ -122,8 +122,8 @@ this phase. You:
 
 ## Constraints (do not break)
 
-- Shift budget = 25% × canonical_max_session. `Σ |adjustments| ≤ budget`.
-- Soft target: 15 questions total. Hard cap: 30. Hitting the cap MUST end
+- Shift budget = {{shift_budget_percent}}% × canonical_max_session. `Σ |adjustments| ≤ budget`.
+- Soft target: {{soft_question_target}} questions total. Hard cap: {{hard_question_cap}}. Hitting the cap MUST end
   Phase 1.
 - Skipping is free (no budget cost). De-weighting is Phase 2 only.
 - Every adjustment carries a justification recorded by the tool.
@@ -180,16 +180,35 @@ def _env_str(key: str, default: str) -> str:
 # ---------------------------------------------------------------------------
 
 import logfire as _logfire  # local alias so we don't accidentally double-import
+from pydantic import BaseModel as _BaseModel
 
-SYSTEM_PROMPT_VAR = _logfire.var(
+
+class SystemPromptInputs(_BaseModel):
+    """Handlebars inputs substituted into the agent_system_prompt template.
+
+    Keeps the prompt text in lockstep with the live bounds so we never
+    tell the model "soft target 15" while enforcing 12 (or vice versa).
+    Substitution syntax in the template is `{{shift_budget_percent}}`
+    etc. — client-side render via `render_serialized_string`.
+    """
+
+    shift_budget_percent: int
+    soft_question_target: int
+    hard_question_cap: int
+
+
+SYSTEM_PROMPT_VAR = _logfire.template_var(
     name="agent_system_prompt",
     type=str,
     default=DEFAULT_SYSTEM_PROMPT,
+    inputs_type=SystemPromptInputs,
     description=(
         "Persona + behaviour rules for the SSCS conversational assessor. "
         "Edit here to tune voice, narration policy, question-selection "
-        "strategy, etc. Picked up on the next polling cycle (~60s); takes "
-        "effect on the agent's very next conversation turn."
+        "strategy, etc. Handlebars `{{placeholder}}` slots are substituted "
+        "at resolve time with the session's live bounds. Picked up on the "
+        "next polling cycle (~60s); takes effect on the agent's very next "
+        "conversation turn."
     ),
 )
 
@@ -239,18 +258,19 @@ HARD_QUESTION_CAP_VAR = _logfire.var(
 )
 
 
-def resolve_system_prompt() -> str:
-    """Current system prompt — Logfire managed value or `DEFAULT_SYSTEM_PROMPT`.
+def resolve_system_prompt(bounds: AgentBounds) -> str:
+    """Current system prompt with the session's live bounds substituted in.
 
     Used as the persona `@agent.system_prompt` callback in `agent.py` so the
-    prompt is re-resolved on every conversation turn.
+    prompt is re-resolved on every conversation turn — and the budget /
+    question-cap numbers it cites always match what's actually enforced.
     """
-    return SYSTEM_PROMPT_VAR.get().value
-
-
-def default_system_prompt() -> str:
-    """Back-compat alias — same as `resolve_system_prompt`. Will be removed."""
-    return resolve_system_prompt()
+    inputs = SystemPromptInputs(
+        shift_budget_percent=round(bounds.shift_budget_fraction * 100),
+        soft_question_target=bounds.soft_question_target,
+        hard_question_cap=bounds.hard_question_cap,
+    )
+    return SYSTEM_PROMPT_VAR.get(inputs).value
 
 
 def default_agent_bounds() -> AgentBounds:
