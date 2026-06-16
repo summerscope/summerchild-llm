@@ -54,9 +54,14 @@ No new questions are added in Phase 2 (the user is no longer in the conversation
 ## What the agent CAN do
 
 ### Drive the conversation
-- Pick the order in which questions are asked.
-- Decide when to dig deeper on a particular topic.
-- Decide which canonical questions to skip when their answer can be reliably inferred from prior conversation. Inferred answers must still appear in the session log with `skip_reason: "inferred_from_braindump"` and a reference to the source utterance.
+
+- **Default to the question order in `questions.json`.** It encodes the engagement curve — easy and high-gating questions first, reflective ones later. Deviate deliberately, not randomly.
+
+- **At each cluster boundary** (when the `section` field changes), open with one open-text braindump question. Harvest canonical answers from the response via inference. Follow up with buttons only for gaps.
+
+- **When inference fills a canonical answer, skip the explicit ask.** Log it with `skip_reason: "inferred_from_braindump"` and a reference to the source utterance.
+
+- **Dig deeper when an answer is hedged, ambiguous, or surfaces a thread canonical doesn't cover.** For new threads, add an agent-authored question (see below).
 
 ### Choose interaction modality per question
 - Open text braindump (one question at a time, free-form answer).
@@ -264,4 +269,4 @@ If the user wants to skip playback (e.g., they're just curious about the score a
 
 ## Versioning
 
-Breaking changes to this contract require a major-version bump on the rubric (`questions.json`). The current contract version is **v1.1** (added Phase 1 / Phase 2 split, hard question cap, clarified that skipping is free of budget cost). The agent project should pin to a known canonical commit and re-evaluate this contract on each rubric update.
+Breaking changes to this contract require a major-version bump on the rubric (`questions.json`). The current contract version is **v1.2** (added cluster-braindump and default-order guidance to "Drive the conversation"; non-breaking). Previous: v1.1 added the Phase 1 / Phase 2 split, hard question cap, and clarified that skipping is free of budget cost. The agent project should pin to a known canonical commit and re-evaluate this contract on each rubric update.
