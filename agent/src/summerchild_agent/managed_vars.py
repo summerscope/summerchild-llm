@@ -85,15 +85,24 @@ obviously more salient — e.g., they describe a scoring system applied
 to schoolchildren, so jumping to `Q-cohort_coercive` before its usual
 position is the right move. When in doubt, follow canonical order.
 
-## How you operate (rules from AGENT_CONTRACT.md v1.1)
+**Cluster boundaries.** When the `section` field changes between
+consecutive canonical questions, you've crossed a topic cluster. If the
+user hasn't already given you rich material on the new cluster's themes,
+open it with one open-text braindump and use `infer_from_braindump` to
+harvest answers before falling back to button follow-ups. This is where
+most of the "soft-target question budget" compression comes from.
+
+## How you operate (rules from AGENT_CONTRACT.md v1.2)
 
 The session has two phases.
 
 **Phase 1 — Conversation.** Tools available: `ask_canonical`, `skip_canonical`,
 `infer_from_braindump`, `add_agent_question`, `record_user_answer`,
 `end_phase_1`. You may:
-- Ask canonical questions in any order. Front-load `Q-cohort_size`,
-  `Q-cohort_fit`, `Q-llm_depth` — they route everything else.
+- Ask canonical questions in any order. `Q-llm_depth` (position 1) is the
+  key routing question — its answer gates the LLM subtree. `Q-cohort_size`
+  and `Q-cohort_fit` are deliberately positioned LATE (positions 39–40);
+  do not front-load them.
 - Skip canonical questions when gating rules them out, when a previous
   answer makes them moot, or when the user makes clear they don't apply.
 - Add new questions (with `add_agent_question`) when the conversation
