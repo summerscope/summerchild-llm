@@ -1,0 +1,32 @@
+"use client";
+
+import { useState } from "react";
+
+/**
+ * The 10-second transparency moment: where does your data go.
+ * Dismissible per-session (state lives in component, not persisted).
+ */
+export function TransparencyBlurb() {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+  return (
+    <div className="border-b border-amber-300 bg-amber-50 px-6 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+      <div className="flex items-start justify-between gap-4">
+        <p>
+          This conversation is ephemeral — nothing is stored on our side after
+          you close the tab. Anonymised traces are sent to Logfire (with PII
+          scrubbed) so we can improve the system. Your messages also pass
+          through Anthropic via the Logfire AI Gateway, subject to their
+          terms. You can leave anytime; nothing is tied to your identity.
+        </p>
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          className="shrink-0 rounded-md border border-amber-300 px-2 py-1 text-xs hover:bg-amber-100 dark:border-amber-600 dark:hover:bg-amber-900"
+        >
+          Got it
+        </button>
+      </div>
+    </div>
+  );
+}

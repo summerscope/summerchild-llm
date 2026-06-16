@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Build
+build/
+dist/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+web/.next/
+web/node_modules/
+web/out/
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
