@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from pydantic import BaseModel, Field
+
 from .budget import BudgetLedger
 from .managed_vars import AgentBounds
 from .models import (
@@ -21,6 +23,27 @@ from .models import (
     SkipReason,
 )
 from .rubric import Rubric
+
+
+class AgentDeps(BaseModel):
+    """Flat deps passed into PydanticAI's run loop.
+
+    Two roles:
+    - `session_id` keys the runtime store where the heavy mutable `SessionDeps`
+      lives — tools resolve it via `state.get_runtime(session_id)`.
+    - The bound fields (`shift_budget_percent`, etc.) are flat primitives so
+      Handlebars rendering in `ManagedPrompt(render_template=True)` can read
+      them as `{{shift_budget_percent}}` etc. directly off `ctx.deps`.
+
+    Keeping this model intentionally tiny and flat — PydanticAI's deps
+    roundtrip is happy with primitives, and broke before when SessionDeps
+    was passed directly (nested sets/tuples/dataclasses mangled to dicts).
+    """
+
+    session_id: str
+    shift_budget_percent: int = Field(ge=0, le=100)
+    soft_question_target: int = Field(ge=1)
+    hard_question_cap: int = Field(ge=1)
 
 
 @dataclass
@@ -100,6 +123,23 @@ def register_session(deps: SessionDeps) -> str:
     """Register fresh SessionDeps; returns the session_id."""
     _runtime.setdefault(deps.session_id, deps)
     return deps.session_id
+
+
+def make_agent_deps(session_id: str) -> AgentDeps:
+    """Build the flat `AgentDeps` for PydanticAI from a registered session.
+
+    Reads the session's locked-in bounds and surfaces them as flat primitives
+    so `ManagedPrompt(render_template=True)` can substitute `{{shift_budget_percent}}`
+    etc. against `ctx.deps` directly.
+    """
+    deps = get_runtime(session_id)
+    b = deps.bounds
+    return AgentDeps(
+        session_id=session_id,
+        shift_budget_percent=round(b.shift_budget_fraction * 100),
+        soft_question_target=b.soft_question_target,
+        hard_question_cap=b.hard_question_cap,
+    )
 
 
 def get_runtime(session_id: str) -> SessionDeps:

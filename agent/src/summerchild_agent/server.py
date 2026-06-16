@@ -28,7 +28,7 @@ from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 from . import logfire_config
 from .agent import agent, make_session_deps
 from .rubric import Rubric
-from .state import maybe_runtime
+from .state import make_agent_deps, maybe_runtime
 
 log = logging.getLogger(__name__)
 
@@ -127,10 +127,14 @@ async def chat(
     conversation_id = x_conversation_id or str(uuid.uuid4())
     sessions: SessionStore = app.state.sessions  # type: ignore[attr-defined]
     session_id = sessions.get_or_create(conversation_id)
+    # AgentDeps carries the session_id (for the runtime store lookup) plus
+    # the bound numbers as flat primitives so ManagedPrompt's Handlebars
+    # render can fill {{shift_budget_percent}} etc. against ctx.deps.
+    agent_deps = make_agent_deps(session_id)
     response = await VercelAIAdapter.dispatch_request(
         request,
         agent=agent,
-        deps=session_id,  # session_id only — agent looks up the rest via get_runtime
+        deps=agent_deps,
         conversation_id=conversation_id,
         sdk_version=6,  # The frontend uses AI SDK v6.
     )

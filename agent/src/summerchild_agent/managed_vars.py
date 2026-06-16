@@ -189,37 +189,13 @@ def _env_str(key: str, default: str) -> str:
 # ---------------------------------------------------------------------------
 
 import logfire as _logfire  # local alias so we don't accidentally double-import
-from pydantic import BaseModel as _BaseModel
 
-
-class SystemPromptInputs(_BaseModel):
-    """Handlebars inputs substituted into the agent_system_prompt template.
-
-    Keeps the prompt text in lockstep with the live bounds so we never
-    tell the model "soft target 15" while enforcing 12 (or vice versa).
-    Substitution syntax in the template is `{{shift_budget_percent}}`
-    etc. — client-side render via `render_serialized_string`.
-    """
-
-    shift_budget_percent: int
-    soft_question_target: int
-    hard_question_cap: int
-
-
-SYSTEM_PROMPT_VAR = _logfire.template_var(
-    name="agent_system_prompt",
-    type=str,
-    default=DEFAULT_SYSTEM_PROMPT,
-    inputs_type=SystemPromptInputs,
-    description=(
-        "Persona + behaviour rules for the SSCS conversational assessor. "
-        "Edit here to tune voice, narration policy, question-selection "
-        "strategy, etc. Handlebars `{{placeholder}}` slots are substituted "
-        "at resolve time with the session's live bounds. Picked up on the "
-        "next polling cycle (~60s); takes effect on the agent's very next "
-        "conversation turn."
-    ),
-)
+# The system prompt is no longer declared here as a managed variable. It
+# lives behind PydanticAI v2's `pydantic_ai_harness.logfire.ManagedPrompt`
+# capability, which auto-creates the backing Logfire variable
+# `prompt__agent_system` and handles per-run resolution + Handlebars
+# rendering against `ctx.deps`. `DEFAULT_SYSTEM_PROMPT` above remains the
+# code-side fallback consumed by `ManagedPrompt(default=...)`.
 
 MODEL_ID_VAR = _logfire.var(
     name="agent_model_id",
@@ -267,19 +243,8 @@ HARD_QUESTION_CAP_VAR = _logfire.var(
 )
 
 
-def resolve_system_prompt(bounds: AgentBounds) -> str:
-    """Current system prompt with the session's live bounds substituted in.
-
-    Used as the persona `@agent.system_prompt` callback in `agent.py` so the
-    prompt is re-resolved on every conversation turn — and the budget /
-    question-cap numbers it cites always match what's actually enforced.
-    """
-    inputs = SystemPromptInputs(
-        shift_budget_percent=round(bounds.shift_budget_fraction * 100),
-        soft_question_target=bounds.soft_question_target,
-        hard_question_cap=bounds.hard_question_cap,
-    )
-    return SYSTEM_PROMPT_VAR.get(inputs).value
+# `resolve_system_prompt` was removed in the v2 migration — `ManagedPrompt`
+# in `agent.py` now owns the persona resolution + Handlebars rendering.
 
 
 def default_agent_bounds() -> AgentBounds:

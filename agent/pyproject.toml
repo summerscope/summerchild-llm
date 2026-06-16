@@ -10,7 +10,8 @@ dependencies = [
     "fastapi>=0.137.1",
     "httpx>=0.28.1",
     "logfire[system-metrics]>=4.37.0",
-    "pydantic-ai>=1.0.0",
+    "pydantic-ai==2.0.0b7",
+    "pydantic-ai-harness>=0.3.0",
     "python-dotenv>=1.2.2",
     "uvicorn[standard]>=0.49.0",
 ]
@@ -40,3 +41,6 @@ select = ["E", "F", "I", "B", "UP", "RUF"]
 # proper typography (em-dash, minus, × ) in user-facing prompts and report
 # output on purpose. Keep them.
 ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.uv.sources]
+pydantic-ai-harness = { git = "https://github.com/pydantic/pydantic-ai-harness", rev = "main" }
