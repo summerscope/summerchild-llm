@@ -84,60 +84,58 @@
   {
     "id": "Q-cohort_fit",
     "section": "calibration",
-    "tags": ["cultural_fit", "multilingual_fairness", "training_distribution"],
-    "text": "How well does the population you're deploying to match the population the system was designed and trained for?\nConsider language, cultural context, socioeconomic distribution, accessibility needs, and digital habits. The further your users are from the design population, the higher the risk of culturally insensitive or unfair outcomes.",
+    "tags": ["cultural_fit", "deployment_spread", "cultural_colonialism"],
+    "text": "Where is your system deployed?\nBroader deployment increases the chance the system encounters cultural, linguistic, or contextual situations its builders didn't anticipate.",
     "gating": null,
     "weight_tier": "medium",
     "preferred_modality": "buttons",
     "answers": {
       "A": {
-        "text": "Very close match — same demographics, language, cultural context",
+        "text": "Internal team or single organisation",
         "score": 0,
         "nextq": "Q-llm_depth",
         "recommendation": null
       },
       "B": {
-        "text": "Mostly aligned, some variation",
+        "text": "Single locality (city, region)",
         "score": 1,
         "nextq": "Q-llm_depth",
         "recommendation": {
-          "tradeoff": "Reach vs. cultural/linguistic appropriateness",
-          "considerations": "Some divergence between design population and deployment population is normal. Identify which axes of variation are most material to your system's outputs — and test against those variations explicitly.",
+          "tradeoff": "Reach vs. operating within a single context's assumptions",
+          "considerations": "Even within a single locality, deployment populations vary in ways the build team didn't necessarily anticipate. Pay attention to within-locality variation in language, accessibility needs, and cultural context.",
           "references": []
         }
       },
       "C": {
-        "text": "Mixed — significant variation across one or more axes",
-        "score": 3,
+        "text": "Single country, multi-region",
+        "score": 2,
         "nextq": "Q-llm_depth",
         "recommendation": {
-          "tradeoff": "Reaching more diverse users vs. system behaving worse for users outside its design assumptions",
-          "considerations": "When the deployment population differs significantly from the design population, the system may behave reasonably for the 'centre' of your users while systematically underperforming for those on the margins. Consider whether you have test data covering the full deployment distribution, whether outcomes vary by demographic group, and whether users on the margins have clear recourse.",
-          "references": [
-            {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"}
-          ]
+          "tradeoff": "Multi-region reach vs. assumptions that don't translate across regions",
+          "considerations": "Different regions within one country can have meaningfully different cultural, linguistic, and socioeconomic contexts. Validate the system's behaviour against representative populations from each region — not just the centre or default.",
+          "references": []
         }
       },
       "D": {
-        "text": "Substantial divergence — deploying to populations the system wasn't designed for",
-        "score": 5,
+        "text": "Multiple countries within one cultural region (e.g., Western Europe, North America)",
+        "score": 4,
         "nextq": "Q-llm_depth",
         "recommendation": {
-          "tradeoff": "Extending reach to under-served populations vs. exporting design assumptions that may not fit",
-          "considerations": "Systems trained on WEIRD (Western, Educated, Industrialised, Rich, Democratic) data and deployed against non-WEIRD populations often produce culturally inappropriate or unfair outputs without anyone noticing. Invest in local user research, deploy with humility, expose your system's confidence boundaries, and give populations on the margins clear ways to flag failures.",
+          "tradeoff": "Cross-border reach vs. exporting one culture's defaults to neighbours",
+          "considerations": "Even within a shared cultural region, country-level differences (legal context, language variants, civic norms, accessibility expectations) compound. Build localised validation into your deployment process — not just translation.",
           "references": [
             {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"},
-            {"source": "EU AI Act", "ref": "Art 13", "topic": "Transparency and provision of information"}
+            {"source": "GDPR", "ref": "Art 3", "topic": "Territorial scope"}
           ]
         }
       },
       "E": {
-        "text": "Severe mismatch — populations and contexts the system has no business operating in",
-        "score": 8,
+        "text": "Multi-region, cross-cultural deployment (continents, language families)",
+        "score": 7,
         "nextq": "Q-llm_depth",
         "recommendation": {
-          "tradeoff": "Reach vs. cultural colonialism",
-          "considerations": "Deploying a system far outside its design population without significant rework risks active harm — including imposing the design population's assumptions, values, and biases onto people who never consented to them. Strongly consider whether you should deploy here at all without first commissioning local design work, local validation, and local governance.",
+          "tradeoff": "Global scale vs. cultural colonialism",
+          "considerations": "Deploying across continents or language families means the system encounters cultural assumptions and contexts the build team almost certainly didn't anticipate. Tech monoculture risk is highest here — defaults built in one cultural context impose themselves on others. Invest in local user research, local validation, and local governance. Be ready to behave differently — or not deploy — in contexts where the system's behaviour doesn't fit.",
           "references": [
             {"source": "EU AI Act", "ref": "Art 9", "topic": "Risk management system"},
             {"source": "EU AI Act", "ref": "Art 10", "topic": "Data and data governance"},
