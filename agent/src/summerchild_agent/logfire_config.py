@@ -43,6 +43,12 @@ def configure(*, service_name: str = "summerchild-agent") -> bool:
         logfire.configure(
             service_name=service_name,
             scrubbing=logfire.ScrubbingOptions(),  # default regex scrubber for secrets/PII
+            # Enable managed-variables polling so `logfire.var(...)` resolves
+            # against the remote value when one's published. Block-before-first
+            # is off so module import doesn't hang waiting on the network on
+            # cold starts; first resolve falls back to the local default until
+            # the first refresh lands.
+            variables=logfire.VariablesOptions(block_before_first_resolve=False),
             # Token is read from LOGFIRE_TOKEN env var automatically if present;
             # otherwise the SDK falls back to `~/.logfire` credentials.
         )

@@ -11,6 +11,7 @@ interface SessionState {
   asked_canonical_count: number;
   added_questions_count: number;
   skipped_count: number;
+  inferred_count: number;
   de_weightings_count: number;
   pending_question_id: string | null;
   playback_presented: boolean;
@@ -113,6 +114,10 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
           <div className="flex justify-between">
             <dt>Asked (agent-added)</dt>
             <dd className="font-mono">{state.added_questions_count}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt>Inferred (from braindump)</dt>
+            <dd className="font-mono">{state.inferred_count}</dd>
           </div>
           <div className="flex justify-between">
             <dt>Skipped</dt>

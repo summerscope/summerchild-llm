@@ -169,25 +169,101 @@ def _env_str(key: str, default: str) -> str:
     return val if val and val.strip() else default
 
 
-def default_system_prompt() -> str:
-    """Local-dev fallback for the system prompt managed variable.
+# ---------------------------------------------------------------------------
+# Logfire managed variable for the system prompt.
+#
+# Declared once at module load. `logfire.var(...)` returns immediately even if
+# Logfire isn't configured — until then, `.get().value` falls back to the
+# `default=` here. After `logfire.configure(...)` runs (server lifespan) and
+# `logfire.variables_push()` is run (one-off, via `scripts/push_variables.py`),
+# the value comes from the Logfire UI and refreshes every ~60s.
+# ---------------------------------------------------------------------------
 
-    When Logfire is reachable, `logfire_config.resolve_system_prompt` will
-    fetch the remote `prompt__system` variable and use that instead. When
-    it's not reachable, callers fall back to this.
+import logfire as _logfire  # local alias so we don't accidentally double-import
+
+SYSTEM_PROMPT_VAR = _logfire.var(
+    name="agent_system_prompt",
+    type=str,
+    default=DEFAULT_SYSTEM_PROMPT,
+    description=(
+        "Persona + behaviour rules for the SSCS conversational assessor. "
+        "Edit here to tune voice, narration policy, question-selection "
+        "strategy, etc. Picked up on the next polling cycle (~60s); takes "
+        "effect on the agent's very next conversation turn."
+    ),
+)
+
+MODEL_ID_VAR = _logfire.var(
+    name="agent_model_id",
+    type=str,
+    default=_env_str("SUMMERCHILD_MODEL", "anthropic:claude-sonnet-4-6"),
+    description=(
+        "PydanticAI model identifier, e.g. 'anthropic:claude-sonnet-4-6' "
+        "or 'openai:gpt-5.2'. NOTE: captured at backend startup — changing "
+        "this in the UI requires a backend restart to take effect."
+    ),
+)
+
+SHIFT_BUDGET_FRACTION_VAR = _logfire.var(
+    name="agent_shift_budget_fraction",
+    type=float,
+    default=_env_float("SUMMERCHILD_SHIFT_BUDGET_FRACTION", 0.25),
+    description=(
+        "Fraction of CANONICAL_MAX_SESSION the agent can redistribute via "
+        "additions + de-weightings. Per AGENT_CONTRACT.md default is 0.25. "
+        "Resolved per-session — new sessions pick up changes immediately; "
+        "in-flight sessions keep their original value."
+    ),
+)
+
+SOFT_QUESTION_TARGET_VAR = _logfire.var(
+    name="agent_soft_question_target",
+    type=int,
+    default=_env_int("SUMMERCHILD_SOFT_QUESTION_TARGET", 15),
+    description=(
+        "Soft target for total questions asked in Phase 1 (canonical + "
+        "agent-added). Agent should land near this on average. Resolved "
+        "per-session — new sessions pick up changes immediately."
+    ),
+)
+
+HARD_QUESTION_CAP_VAR = _logfire.var(
+    name="agent_hard_question_cap",
+    type=int,
+    default=_env_int("SUMMERCHILD_HARD_QUESTION_CAP", 30),
+    description=(
+        "Hard ceiling on Phase 1 questions. Hitting this MUST end Phase 1. "
+        "Stops scope blowout. Resolved per-session — new sessions pick up "
+        "changes immediately."
+    ),
+)
+
+
+def resolve_system_prompt() -> str:
+    """Current system prompt — Logfire managed value or `DEFAULT_SYSTEM_PROMPT`.
+
+    Used as the persona `@agent.system_prompt` callback in `agent.py` so the
+    prompt is re-resolved on every conversation turn.
     """
-    return DEFAULT_SYSTEM_PROMPT
+    return SYSTEM_PROMPT_VAR.get().value
+
+
+def default_system_prompt() -> str:
+    """Back-compat alias — same as `resolve_system_prompt`. Will be removed."""
+    return resolve_system_prompt()
 
 
 def default_agent_bounds() -> AgentBounds:
-    """Local-dev fallback for the agent-bounds managed variables.
+    """Resolve the four agent-bound managed variables from Logfire.
 
-    Env vars override the hard-coded defaults so local iteration on bounds
-    is possible without a Logfire login.
+    Called once at module load to capture `model_id` into the Agent (frozen
+    until backend restart) AND fresh on each new session via
+    `make_session_deps`, so new sessions always pick up the latest cap +
+    budget values.
     """
     return AgentBounds(
-        shift_budget_fraction=_env_float("SUMMERCHILD_SHIFT_BUDGET_FRACTION", 0.25),
-        soft_question_target=_env_int("SUMMERCHILD_SOFT_QUESTION_TARGET", 15),
-        hard_question_cap=_env_int("SUMMERCHILD_HARD_QUESTION_CAP", 30),
-        model_id=_env_str("SUMMERCHILD_MODEL", "anthropic:claude-sonnet-4-6"),
+        shift_budget_fraction=SHIFT_BUDGET_FRACTION_VAR.get().value,
+        soft_question_target=SOFT_QUESTION_TARGET_VAR.get().value,
+        hard_question_cap=HARD_QUESTION_CAP_VAR.get().value,
+        model_id=MODEL_ID_VAR.get().value,
     )

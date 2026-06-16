@@ -14,41 +14,19 @@ the session is done.
 
 from __future__ import annotations
 
-import os
 from datetime import datetime
-from pathlib import Path
 from typing import Annotated, Literal
 
-# Load .env BEFORE the placeholder setdefault — otherwise the placeholder
-# wins and gets sent to Anthropic, which 401s. We walk up from this file
-# until we find an `.env` next to a `pyproject.toml` (handles both `uv run`
-# from the project dir and tests run from elsewhere).
-try:
-    from dotenv import load_dotenv as _load_dotenv
-
-    for _candidate in [Path(__file__).resolve()] + list(Path(__file__).resolve().parents):
-        _env = _candidate.parent / ".env" if _candidate.is_file() else _candidate / ".env"
-        if _env.is_file():
-            # override=True so editing .env and restarting the server always
-            # picks up the new value, even if a stale value lingers in the
-            # shell from earlier debugging.
-            _load_dotenv(_env, override=True)
-            break
-except ImportError:
-    # python-dotenv not installed — env vars must be set in the shell.
-    pass
-
-# The Anthropic provider eagerly validates ANTHROPIC_API_KEY at construction.
-# Placeholder lets module import succeed when no key is configured anywhere;
-# real key (env var or .env) is loaded above and wins via setdefault semantics.
-os.environ.setdefault("ANTHROPIC_API_KEY", "placeholder-real-key-required-at-runtime")
+# .env autoload + ANTHROPIC_API_KEY placeholder both live in the package
+# `__init__.py` so every entry point (server, tests, ops scripts) is
+# equally well-served on import.
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.tools import ToolDefinition
 
 from .budget import BudgetExceeded
-from .managed_vars import default_agent_bounds, default_system_prompt
+from .managed_vars import default_agent_bounds, resolve_system_prompt
 from .models import (
     AgentAddedQuestion,
     Answer,
@@ -87,13 +65,27 @@ agent: Agent[str, str] = Agent(
     _BOUNDS.model_id,
     deps_type=str,
     output_type=str,
-    instructions=default_system_prompt(),
+    # Persona prompt is resolved per-turn from a Logfire managed variable
+    # via the `_persona` @agent.system_prompt callback below — NOT baked
+    # in at construction time. That way edits in the Logfire UI take
+    # effect on the next polling cycle (default ~60s) without redeploying.
     # Give the agent multiple shots to recover from validation errors —
     # e.g. when it guesses an answer key that isn't in the rubric. With the
     # default (1) a single bad attempt bubbles up as ToolRetryError instead
     # of letting the model self-correct.
     retries=5,
 )
+
+
+@agent.system_prompt
+def _persona() -> str:
+    """Fetch the persona / behaviour rules from the Logfire managed variable.
+
+    Falls back to `DEFAULT_SYSTEM_PROMPT` in `managed_vars.py` until
+    `logfire.variables_push()` has registered the variable and the Logfire
+    UI has a published value for it. See `scripts/push_variables.py`.
+    """
+    return resolve_system_prompt()
 
 
 def _deps(ctx: RunContext[str]) -> SessionDeps:
