@@ -13,7 +13,7 @@ import os
 import sys
 
 
-QUESTIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
+QUESTIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "questions.json")
 
 with open(QUESTIONS_PATH, "r") as io:
     data = json.load(io)
