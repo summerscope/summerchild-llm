@@ -61,7 +61,13 @@ class SessionState:
 
 @dataclass
 class SessionDeps:
-    """Container the agent receives as `deps`. Holds everything the tools need."""
+    """Container holding everything tools need. NOT passed directly to PydanticAI.
+
+    The agent's `deps` is just the `session_id` (a string). Tools look up the
+    matching `SessionDeps` from the runtime store via `get_runtime(session_id)`.
+    This avoids PydanticAI's Pydantic-validation roundtrip mangling the nested
+    dataclasses (state, BudgetLedger) into dicts when the run begins.
+    """
 
     session_id: str
     rubric: Rubric
@@ -80,6 +86,36 @@ class SessionDeps:
         return self.state.asked_canonical_ids.__len__() + len(
             self.state.added_questions
         ) >= self.bounds.soft_question_target
+
+
+# ---------------------------------------------------------------------------
+# Runtime store — module-level dict keyed by session_id.
+# In-memory only; goes away on server restart (matches ephemeral posture).
+# ---------------------------------------------------------------------------
+
+_runtime: dict[str, SessionDeps] = {}
+
+
+def register_session(deps: SessionDeps) -> str:
+    """Register fresh SessionDeps; returns the session_id."""
+    _runtime.setdefault(deps.session_id, deps)
+    return deps.session_id
+
+
+def get_runtime(session_id: str) -> SessionDeps:
+    """Look up the SessionDeps for session_id. Raises if unknown."""
+    if session_id not in _runtime:
+        raise KeyError(f"No runtime session registered for {session_id!r}")
+    return _runtime[session_id]
+
+
+def maybe_runtime(session_id: str) -> SessionDeps | None:
+    """Look up without raising — for debug endpoints."""
+    return _runtime.get(session_id)
+
+
+def forget_session(session_id: str) -> None:
+    _runtime.pop(session_id, None)
 
 
 def make_routed_log(deps: SessionDeps) -> list[RoutedCanonicalEntry]:

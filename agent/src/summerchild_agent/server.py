@@ -28,7 +28,7 @@ from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 from . import logfire_config
 from .agent import agent, make_session_deps
 from .rubric import Rubric
-from .state import SessionDeps
+from .state import maybe_runtime
 
 log = logging.getLogger(__name__)
 
@@ -40,27 +40,29 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class SessionStore:
-    """Map conversation_id → SessionDeps. Goes away on restart."""
+    """Tracks active conversation ids. Heavy state lives in the runtime store
+    in state.py — this just owns the rubric and the set of known session ids
+    so we can answer /health and friends."""
 
     rubric: Rubric
-    _sessions: dict[str, SessionDeps]
+    _ids: set[str]
 
     def __init__(self, rubric: Rubric) -> None:
         self.rubric = rubric
-        self._sessions = {}
+        self._ids = set()
 
-    def get_or_create(self, conversation_id: str) -> SessionDeps:
-        if conversation_id not in self._sessions:
-            self._sessions[conversation_id] = make_session_deps(
-                conversation_id, self.rubric
-            )
-        return self._sessions[conversation_id]
+    def get_or_create(self, conversation_id: str) -> str:
+        """Ensure a runtime session exists for `conversation_id`; returns it."""
+        if conversation_id not in self._ids:
+            make_session_deps(conversation_id, self.rubric)
+            self._ids.add(conversation_id)
+        return conversation_id
 
-    def get(self, conversation_id: str) -> SessionDeps | None:
-        return self._sessions.get(conversation_id)
+    def has(self, conversation_id: str) -> bool:
+        return conversation_id in self._ids
 
     def __len__(self) -> int:
-        return len(self._sessions)
+        return len(self._ids)
 
 
 # ---------------------------------------------------------------------------
@@ -124,11 +126,11 @@ async def chat(
     """
     conversation_id = x_conversation_id or str(uuid.uuid4())
     sessions: SessionStore = app.state.sessions  # type: ignore[attr-defined]
-    deps = sessions.get_or_create(conversation_id)
+    session_id = sessions.get_or_create(conversation_id)
     response = await VercelAIAdapter.dispatch_request(
         request,
         agent=agent,
-        deps=deps,
+        deps=session_id,  # session_id only — agent looks up the rest via get_runtime
         conversation_id=conversation_id,
         sdk_version=6,  # The frontend uses AI SDK v6.
     )
@@ -136,17 +138,51 @@ async def chat(
     return response
 
 
+def _empty_state_payload(conversation_id: str) -> dict:
+    """Shape returned for session ids the server hasn't seen via /api/chat yet."""
+    return {
+        "conversation_id": conversation_id,
+        "exists": False,
+        "phase": 1,
+        "depth": None,
+        "cohort_multiplier": None,
+        "asked_canonical_count": 0,
+        "added_questions_count": 0,
+        "skipped_count": 0,
+        "de_weightings_count": 0,
+        "pending_question_id": None,
+        "playback_presented": False,
+        "playback_skipped": False,
+        "corrections_count": 0,
+        "final_report_ready": False,
+        "budget": {
+            "fraction": 0.25,
+            "canonical_max_session": 0,
+            "shift_budget": 0.0,
+            "spent_additions": 0,
+            "spent_de_weighting": 0,
+            "spent_total": 0,
+            "remaining": 0.0,
+        },
+    }
+
+
 @app.get("/api/session/{conversation_id}/state")
 async def session_state(conversation_id: str) -> JSONResponse:
-    """Debug view of current state. Useful for hand-poking; not for prod UX."""
-    sessions: SessionStore = app.state.sessions  # type: ignore[attr-defined]
-    deps = sessions.get(conversation_id)
+    """Live state view for the frontend's ScoreSidebar.
+
+    Returns a 200 with an empty-state shape for unknown ids — the frontend
+    polls this BEFORE the first /api/chat call, so 404s here would just be
+    console noise. Sessions are created lazily by /api/chat.
+    """
+    deps = maybe_runtime(conversation_id)
     if deps is None:
-        raise HTTPException(status_code=404, detail="No such session")
+        return JSONResponse(_empty_state_payload(conversation_id))
     s = deps.state
     return JSONResponse(
         {
             "conversation_id": conversation_id,
+            "exists": True,
             "phase": s.phase,
             "depth": s.depth,
             "cohort_multiplier": s.cohort_multiplier,
@@ -175,8 +211,7 @@ async def session_state(conversation_id: str) -> JSONResponse:
 @app.get("/api/session/{conversation_id}/report")
 async def session_report(conversation_id: str) -> Response:
     """Returns the markdown report for a finalised session. 404 until finalised."""
-    sessions: SessionStore = app.state.sessions  # type: ignore[attr-defined]
-    deps = sessions.get(conversation_id)
+    deps = maybe_runtime(conversation_id)
     if deps is None:
         raise HTTPException(status_code=404, detail="No such session")
     if deps.state.final_report is None:

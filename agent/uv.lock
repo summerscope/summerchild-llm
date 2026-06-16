@@ -2783,6 +2783,7 @@ dependencies = [
     { name = "httpx" },
     { name = "logfire", extra = ["system-metrics"] },
     { name = "pydantic-ai" },
+    { name = "python-dotenv" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -2799,6 +2800,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "logfire", extras = ["system-metrics"], specifier = ">=4.37.0" },
     { name = "pydantic-ai", specifier = ">=1.0.0" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.49.0" },
 ]
 

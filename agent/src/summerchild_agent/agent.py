@@ -16,14 +16,31 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Annotated, Literal
 
+# Load .env BEFORE the placeholder setdefault — otherwise the placeholder
+# wins and gets sent to Anthropic, which 401s. We walk up from this file
+# until we find an `.env` next to a `pyproject.toml` (handles both `uv run`
+# from the project dir and tests run from elsewhere).
+try:
+    from dotenv import load_dotenv as _load_dotenv
+
+    for _candidate in [Path(__file__).resolve()] + list(Path(__file__).resolve().parents):
+        _env = _candidate.parent / ".env" if _candidate.is_file() else _candidate / ".env"
+        if _env.is_file():
+            # override=True so editing .env and restarting the server always
+            # picks up the new value, even if a stale value lingers in the
+            # shell from earlier debugging.
+            _load_dotenv(_env, override=True)
+            break
+except ImportError:
+    # python-dotenv not installed — env vars must be set in the shell.
+    pass
+
 # The Anthropic provider eagerly validates ANTHROPIC_API_KEY at construction.
-# We don't want module import to require a key (lets tests run, lets the
-# server boot in a degraded "no real LLM" state). The placeholder is replaced
-# at first agent.run() call by the real env var if present; if it isn't,
-# the underlying API call surfaces the auth error then — much clearer than
-# an import-time crash.
+# Placeholder lets module import succeed when no key is configured anywhere;
+# real key (env var or .env) is loaded above and wins via setdefault semantics.
 os.environ.setdefault("ANTHROPIC_API_KEY", "placeholder-real-key-required-at-runtime")
 
 from pydantic import BaseModel, Field
@@ -47,7 +64,13 @@ from .models import (
     SkipReason,
 )
 from .rubric import Rubric
-from .state import SessionDeps, SessionState, make_routed_log
+from .state import (
+    SessionDeps,
+    SessionState,
+    get_runtime,
+    make_routed_log,
+    register_session,
+)
 
 # ---------------------------------------------------------------------------
 # Agent construction
@@ -55,12 +78,23 @@ from .state import SessionDeps, SessionState, make_routed_log
 
 _BOUNDS = default_agent_bounds()
 
-agent: Agent[SessionDeps, str] = Agent(
+# `deps` is the session_id string. The actual mutable SessionDeps lives in
+# the runtime store (state.py) and is looked up via `_deps(ctx)`. Passing
+# only the session_id avoids PydanticAI's Pydantic-validation roundtrip
+# that was previously mangling the nested SessionState dataclass into a
+# dict and breaking attribute access in tool/system-prompt callbacks.
+agent: Agent[str, str] = Agent(
     _BOUNDS.model_id,
-    deps_type=SessionDeps,
+    deps_type=str,
     output_type=str,
     instructions=default_system_prompt(),
 )
+
+
+def _deps(ctx: RunContext[str]) -> SessionDeps:
+    """Resolve the live SessionDeps from the session_id-typed `ctx.deps`."""
+    session_id: str = ctx.deps  # type: ignore[assignment]
+    return get_runtime(session_id)
 
 
 # ---------------------------------------------------------------------------
@@ -69,9 +103,9 @@ agent: Agent[SessionDeps, str] = Agent(
 
 
 @agent.system_prompt
-def _state_summary(ctx: RunContext[SessionDeps]) -> str:
-    s = ctx.deps.state
-    b = ctx.deps.budget
+def _state_summary(ctx: RunContext[str]) -> str:
+    s = _deps(ctx).state
+    b = _deps(ctx).budget
     asked_total = len(s.asked_canonical_ids) + len(s.added_questions)
     lines = [
         "## Current session state",
@@ -82,8 +116,8 @@ def _state_summary(ctx: RunContext[SessionDeps]) -> str:
         f"- Agent-added questions: {len(s.added_questions)}",
         f"- Canonical questions skipped: {len(s.skipped) + len(s.inferred_answers)}",
         f"- Total questions asked so far: {asked_total} (soft target "
-        f"{ctx.deps.bounds.soft_question_target}, hard cap "
-        f"{ctx.deps.bounds.hard_question_cap})",
+        f"{_deps(ctx).bounds.soft_question_target}, hard cap "
+        f"{_deps(ctx).bounds.hard_question_cap})",
         f"- Shift budget: spent {b.spent_total}/{b.shift_budget:.1f} "
         f"({b.spent_additions} additions, {b.spent_de_weighting} de-weightings)",
     ]
@@ -92,9 +126,9 @@ def _state_summary(ctx: RunContext[SessionDeps]) -> str:
             f"- Pending answer for: {s.pending_question_id} "
             f"({s.pending_question_source})"
         )
-    if ctx.deps.hit_question_cap:
+    if _deps(ctx).hit_question_cap:
         lines.append("- **At hard cap — Phase 1 must end now.**")
-    elif ctx.deps.at_soft_target and s.phase == 1:
+    elif _deps(ctx).at_soft_target and s.phase == 1:
         lines.append("- **At soft target — consider whether you have enough signal.**")
     return "\n".join(lines)
 
@@ -107,11 +141,11 @@ def _state_summary(ctx: RunContext[SessionDeps]) -> str:
 def _phase_is(phase: int):
     """Build a `prepare=` callback that exposes a tool only in the given phase."""
 
-    async def gate(ctx: RunContext[SessionDeps], td: ToolDefinition) -> ToolDefinition | None:
-        if ctx.deps.state.phase != phase:
+    async def gate(ctx: RunContext[str], td: ToolDefinition) -> ToolDefinition | None:
+        if _deps(ctx).state.phase != phase:
             return None
         # Once finalised, no more tools.
-        if ctx.deps.state.final_report is not None:
+        if _deps(ctx).state.final_report is not None:
             return None
         return td
 
@@ -182,7 +216,7 @@ class AddAgentQuestionArgs(BaseModel):
 
 
 @agent.tool(prepare=_phase_is(1))
-def ask_canonical(ctx: RunContext[SessionDeps], args: AskCanonicalArgs) -> str:
+def ask_canonical(ctx: RunContext[str], args: AskCanonicalArgs) -> str:
     """Stage a canonical question to be asked of the user this turn.
 
     Records the ask in the session log + budget. Your text output for this
@@ -190,84 +224,84 @@ def ask_canonical(ctx: RunContext[SessionDeps], args: AskCanonicalArgs) -> str:
     Only stage one ask per turn.
     """
     qid = args.question_id
-    if qid not in ctx.deps.rubric:
+    if qid not in _deps(ctx).rubric:
         raise ModelRetry(f"Unknown canonical question_id: {qid!r}")
-    if qid in ctx.deps.state.asked_canonical_ids or qid in ctx.deps.state.skipped:
+    if qid in _deps(ctx).state.asked_canonical_ids or qid in _deps(ctx).state.skipped:
         raise ModelRetry(f"{qid} has already been addressed this session.")
-    if ctx.deps.state.pending_question_id is not None:
+    if _deps(ctx).state.pending_question_id is not None:
         raise ModelRetry(
             "Another question is already pending an answer — record the user's "
             "answer first before asking a new one."
         )
-    q = ctx.deps.rubric[qid]
+    q = _deps(ctx).rubric[qid]
     # Check applicability
-    if not ctx.deps.rubric.is_applicable(
-        q, depth=ctx.deps.state.depth, answers_given=ctx.deps.state.answers_given
+    if not _deps(ctx).rubric.is_applicable(
+        q, depth=_deps(ctx).state.depth, answers_given=_deps(ctx).state.answers_given
     ):
         raise ModelRetry(
             f"{qid} is not applicable given current state — gating not satisfied."
         )
-    ctx.deps.budget.record_canonical_asked(q)
-    ctx.deps.state.asked_canonical_ids.add(qid)
-    ctx.deps.state.pending_question_id = qid
-    ctx.deps.state.pending_question_source = "canonical"
+    _deps(ctx).budget.record_canonical_asked(q)
+    _deps(ctx).state.asked_canonical_ids.add(qid)
+    _deps(ctx).state.pending_question_id = qid
+    _deps(ctx).state.pending_question_source = "canonical"
     # Return a structured view of the question for the agent to format
     return _render_question_for_agent(q.text, q.answers, q.preferred_modality)
 
 
 @agent.tool(prepare=_phase_is(1))
-def skip_canonical(ctx: RunContext[SessionDeps], args: SkipCanonicalArgs) -> str:
+def skip_canonical(ctx: RunContext[str], args: SkipCanonicalArgs) -> str:
     """Skip a canonical question. Free — does not consume shift budget."""
     qid = args.question_id
-    if qid not in ctx.deps.rubric:
+    if qid not in _deps(ctx).rubric:
         raise ModelRetry(f"Unknown canonical question_id: {qid!r}")
-    if qid in ctx.deps.state.asked_canonical_ids or qid in ctx.deps.state.skipped:
+    if qid in _deps(ctx).state.asked_canonical_ids or qid in _deps(ctx).state.skipped:
         raise ModelRetry(f"{qid} has already been addressed.")
-    ctx.deps.state.skipped[qid] = (SkipReason(args.reason), args.evidence, None)
+    _deps(ctx).state.skipped[qid] = (SkipReason(args.reason), args.evidence, None)
     return f"Skipped {qid} ({args.reason})."
 
 
 @agent.tool(prepare=_phase_is(1))
 def infer_from_braindump(
-    ctx: RunContext[SessionDeps], args: InferFromBraindumpArgs
+    ctx: RunContext[str], args: InferFromBraindumpArgs
 ) -> str:
     """Record an inferred canonical answer extracted from the user's braindump.
 
     The question is treated as skipped (no budget cost, no further ask).
     """
     qid = args.question_id
-    if qid not in ctx.deps.rubric:
+    if qid not in _deps(ctx).rubric:
         raise ModelRetry(f"Unknown canonical question_id: {qid!r}")
-    if qid in ctx.deps.state.asked_canonical_ids or qid in ctx.deps.state.skipped:
+    if qid in _deps(ctx).state.asked_canonical_ids or qid in _deps(ctx).state.skipped:
         raise ModelRetry(f"{qid} has already been addressed.")
-    q = ctx.deps.rubric[qid]
+    q = _deps(ctx).rubric[qid]
     if args.inferred_answer_key not in q.answers:
         raise ModelRetry(
             f"Answer key {args.inferred_answer_key!r} not in {qid} answers: "
             f"{list(q.answers)}"
         )
-    ctx.deps.state.inferred_answers[qid] = (args.inferred_answer_key, args.evidence)
-    ctx.deps.state.answers_given[qid] = args.inferred_answer_key
-    _maybe_apply_calibration(ctx.deps, qid, args.inferred_answer_key)
+    _deps(ctx).state.inferred_answers[qid] = (args.inferred_answer_key, args.evidence)
+    _deps(ctx).state.answers_given[qid] = args.inferred_answer_key
+    _maybe_apply_calibration(_deps(ctx), qid, args.inferred_answer_key)
     return f"Inferred {qid}={args.inferred_answer_key} from braindump."
 
 
 @agent.tool(prepare=_phase_is(1))
 def record_user_answer(
-    ctx: RunContext[SessionDeps], args: RecordUserAnswerArgs
+    ctx: RunContext[str], args: RecordUserAnswerArgs
 ) -> str:
     """Record the user's answer to the currently-pending question."""
     qid = args.question_id
-    if ctx.deps.state.pending_question_id != qid:
+    if _deps(ctx).state.pending_question_id != qid:
         raise ModelRetry(
             f"No pending question {qid!r}. Pending is "
-            f"{ctx.deps.state.pending_question_id!r}."
+            f"{_deps(ctx).state.pending_question_id!r}."
         )
-    source = ctx.deps.state.pending_question_source
+    source = _deps(ctx).state.pending_question_source
     if source == "canonical":
-        q = ctx.deps.rubric[qid]
+        q = _deps(ctx).rubric[qid]
     elif source == "agent-added":
-        q = ctx.deps.state.added_questions[qid]
+        q = _deps(ctx).state.added_questions[qid]
     else:
         raise ModelRetry(f"Unknown pending source: {source!r}")
     if args.answer_key not in q.answers:
@@ -275,27 +309,27 @@ def record_user_answer(
             f"Answer key {args.answer_key!r} not valid for {qid}. Choices: "
             f"{list(q.answers)}"
         )
-    ctx.deps.state.answers_given[qid] = args.answer_key
+    _deps(ctx).state.answers_given[qid] = args.answer_key
     if source == "agent-added":
-        ctx.deps.state.added_questions[qid] = ctx.deps.state.added_questions[qid].model_copy(
+        _deps(ctx).state.added_questions[qid] = _deps(ctx).state.added_questions[qid].model_copy(
             update={"answer_given": args.answer_key}
         )
-    ctx.deps.state.pending_question_id = None
-    ctx.deps.state.pending_question_source = None
-    _maybe_apply_calibration(ctx.deps, qid, args.answer_key)
+    _deps(ctx).state.pending_question_id = None
+    _deps(ctx).state.pending_question_source = None
+    _maybe_apply_calibration(_deps(ctx), qid, args.answer_key)
     return f"Recorded {qid}={args.answer_key}."
 
 
 @agent.tool(prepare=_phase_is(1))
 def add_agent_question(
-    ctx: RunContext[SessionDeps], args: AddAgentQuestionArgs
+    ctx: RunContext[str], args: AddAgentQuestionArgs
 ) -> str:
     """Add a new agent-authored question and stage it as the pending ask.
 
     Consumes shift budget (its max-possible score). The question is shown
     to the user this turn — your text output should be the question.
     """
-    if ctx.deps.state.pending_question_id is not None:
+    if _deps(ctx).state.pending_question_id is not None:
         raise ModelRetry(
             "Another question is already pending — record the user's answer "
             "first before adding a new one."
@@ -335,48 +369,48 @@ def add_agent_question(
     except ValueError as e:
         raise ModelRetry(str(e)) from e
     try:
-        ctx.deps.budget.record_agent_added(added)
+        _deps(ctx).budget.record_agent_added(added)
     except BudgetExceeded as e:
         raise ModelRetry(str(e)) from e
-    ctx.deps.state.added_questions[added.id] = added
-    ctx.deps.state.pending_question_id = added.id
-    ctx.deps.state.pending_question_source = "agent-added"
+    _deps(ctx).state.added_questions[added.id] = added
+    _deps(ctx).state.pending_question_id = added.id
+    _deps(ctx).state.pending_question_source = "agent-added"
     return _render_question_for_agent(added.text, added.answers, "buttons")
 
 
 @agent.tool(prepare=_phase_is(1))
-def end_phase_1(ctx: RunContext[SessionDeps]) -> str:
+def end_phase_1(ctx: RunContext[str]) -> str:
     """End Phase 1 (conversation) and enter Phase 2 (re-weight + playback).
 
     Call this when you have enough signal OR when the question cap is hit.
     """
-    if ctx.deps.state.pending_question_id is not None:
+    if _deps(ctx).state.pending_question_id is not None:
         raise ModelRetry(
             f"Cannot end Phase 1 with a question still pending "
-            f"({ctx.deps.state.pending_question_id})."
+            f"({_deps(ctx).state.pending_question_id})."
         )
-    if ctx.deps.state.cohort_multiplier is None:
+    if _deps(ctx).state.cohort_multiplier is None:
         raise ModelRetry(
             "Cannot end Phase 1 without an answer to Q-cohort_size — the cohort "
             "multiplier is required for scoring."
         )
-    if ctx.deps.hit_question_cap:
-        ctx.deps.budget.hit_question_cap()
+    if _deps(ctx).hit_question_cap:
+        _deps(ctx).budget.hit_question_cap()
         # Mark anything still in routed-but-not-addressed as "question_cap_reached"
         addressed = (
-            ctx.deps.state.asked_canonical_ids
-            | ctx.deps.state.skipped.keys()
-            | ctx.deps.state.inferred_answers.keys()
+            _deps(ctx).state.asked_canonical_ids
+            | _deps(ctx).state.skipped.keys()
+            | _deps(ctx).state.inferred_answers.keys()
         )
-        for q in ctx.deps.rubric:
+        for q in _deps(ctx).rubric:
             if q.id in addressed:
                 continue
-            if not ctx.deps.rubric.is_applicable(
-                q, depth=ctx.deps.state.depth, answers_given=ctx.deps.state.answers_given
+            if not _deps(ctx).rubric.is_applicable(
+                q, depth=_deps(ctx).state.depth, answers_given=_deps(ctx).state.answers_given
             ):
                 continue
-            ctx.deps.state.skipped[q.id] = (SkipReason.QUESTION_CAP_REACHED, None, None)
-    ctx.deps.state.phase = 2
+            _deps(ctx).state.skipped[q.id] = (SkipReason.QUESTION_CAP_REACHED, None, None)
+    _deps(ctx).state.phase = 2
     return "Phase 1 ended. Phase 2 tools (de_weight, present_playback, record_correction, finalise) are now available."
 
 
@@ -420,18 +454,18 @@ class RecordCorrectionArgs(BaseModel):
 
 
 @agent.tool(prepare=_phase_is(2))
-def de_weight(ctx: RunContext[SessionDeps], args: DeWeightArgs) -> str:
+def de_weight(ctx: RunContext[str], args: DeWeightArgs) -> str:
     """De-weight a canonical question. Cost = drop in its max-possible contribution."""
     qid = args.question_id
-    if qid not in ctx.deps.rubric:
+    if qid not in _deps(ctx).rubric:
         raise ModelRetry(f"Unknown canonical question_id: {qid!r}")
-    if qid in ctx.deps.state.de_weightings:
+    if qid in _deps(ctx).state.de_weightings:
         raise ModelRetry(f"{qid} has already been de-weighted this session.")
-    if qid not in ctx.deps.state.asked_canonical_ids:
+    if qid not in _deps(ctx).state.asked_canonical_ids:
         raise ModelRetry(
             f"Can only de-weight a question that was asked. {qid} was not."
         )
-    q = ctx.deps.rubric[qid]
+    q = _deps(ctx).rubric[qid]
     original = {k: a.score for k, a in q.answers.items() if a.score is not None}
     effective = dict(args.effective_scores)
     # Sanity: same keys, each effective <= original
@@ -449,18 +483,18 @@ def de_weight(ctx: RunContext[SessionDeps], args: DeWeightArgs) -> str:
         if eff < 0:
             raise ModelRetry(f"Effective score {key}={eff} cannot be negative.")
     try:
-        ctx.deps.budget.record_de_weight(
+        _deps(ctx).budget.record_de_weight(
             original_max=max(original.values()),
             effective_max=max(effective.values()),
         )
     except BudgetExceeded as e:
         raise ModelRetry(str(e)) from e
-    ctx.deps.state.de_weightings[qid] = (original, effective, args.justification)
+    _deps(ctx).state.de_weightings[qid] = (original, effective, args.justification)
     return f"De-weighted {qid}: max went from {max(original.values())} → {max(effective.values())}."
 
 
 @agent.tool(prepare=_phase_is(2))
-def present_playback(ctx: RunContext[SessionDeps], args: PresentPlaybackArgs) -> str:
+def present_playback(ctx: RunContext[str], args: PresentPlaybackArgs) -> str:
     """Record the playback bullets to be shown to the user.
 
     Your text output this turn should render the bullets and end with a
@@ -477,32 +511,32 @@ def present_playback(ctx: RunContext[SessionDeps], args: PresentPlaybackArgs) ->
     # Validate that all source_question_ids reference real questions.
     for b in bullets:
         for qid in b.source_question_ids:
-            if qid not in ctx.deps.rubric and qid not in ctx.deps.state.added_questions:
+            if qid not in _deps(ctx).rubric and qid not in _deps(ctx).state.added_questions:
                 raise ModelRetry(
                     f"Playback bullet references unknown question_id {qid!r}."
                 )
-    ctx.deps.state.playback_bullets = bullets
-    ctx.deps.state.playback_presented = True
+    _deps(ctx).state.playback_bullets = bullets
+    _deps(ctx).state.playback_presented = True
     return f"Playback recorded with {len(bullets)} bullets."
 
 
 @agent.tool(prepare=_phase_is(2))
 def record_correction(
-    ctx: RunContext[SessionDeps], args: RecordCorrectionArgs
+    ctx: RunContext[str], args: RecordCorrectionArgs
 ) -> str:
     """Record a user correction during playback. Updates answers_given."""
     qid = args.question_id
-    if qid in ctx.deps.rubric:
-        q = ctx.deps.rubric[qid]
-    elif qid in ctx.deps.state.added_questions:
-        q = ctx.deps.state.added_questions[qid]
+    if qid in _deps(ctx).rubric:
+        q = _deps(ctx).rubric[qid]
+    elif qid in _deps(ctx).state.added_questions:
+        q = _deps(ctx).state.added_questions[qid]
     else:
         raise ModelRetry(f"Unknown question_id for correction: {qid!r}")
     if args.corrected_answer_key not in q.answers:
         raise ModelRetry(
             f"Corrected answer key {args.corrected_answer_key!r} not in {qid} answers."
         )
-    ctx.deps.state.corrections.append(
+    _deps(ctx).state.corrections.append(
         Correction(
             question_id=qid,
             prior_answer_key=args.prior_answer_key,
@@ -510,20 +544,20 @@ def record_correction(
             note=args.note,
         )
     )
-    ctx.deps.state.answers_given[qid] = args.corrected_answer_key
+    _deps(ctx).state.answers_given[qid] = args.corrected_answer_key
     return f"Correction recorded for {qid}: {args.prior_answer_key} → {args.corrected_answer_key}."
 
 
 @agent.tool(prepare=_phase_is(2))
-def finalise(ctx: RunContext[SessionDeps]) -> str:
+def finalise(ctx: RunContext[str]) -> str:
     """Build the FinalReport and commit it. Call this once playback is done."""
-    if not ctx.deps.state.playback_presented and not ctx.deps.state.playback_skipped:
+    if not _deps(ctx).state.playback_presented and not _deps(ctx).state.playback_skipped:
         raise ModelRetry(
             "Cannot finalise before running `present_playback` (or marking it "
             "skipped via the future `skip_playback` tool)."
         )
-    report = _build_final_report(ctx.deps)
-    ctx.deps.state.final_report = report
+    report = _build_final_report(_deps(ctx))
+    _deps(ctx).state.final_report = report
     return (
         f"Session finalised. Final score: {report.score_computation.final_score}. "
         f"Report ready."
@@ -652,15 +686,20 @@ def _compute_score(
 # ---------------------------------------------------------------------------
 
 
-def make_session_deps(session_id: str, rubric: Rubric) -> SessionDeps:
-    """Build a fresh SessionDeps for a new conversation."""
+def make_session_deps(session_id: str, rubric: Rubric) -> str:
+    """Build and register a fresh SessionDeps. Returns the session_id.
+
+    The session_id is what the server passes as `deps=` to the agent run —
+    tools resolve the actual SessionDeps via the runtime store.
+    """
     from .budget import BudgetLedger as _BL
 
     bounds = default_agent_bounds()
-    return SessionDeps(
+    deps = SessionDeps(
         session_id=session_id,
         rubric=rubric,
         bounds=bounds,
         budget=_BL(fraction=bounds.shift_budget_fraction),
         state=SessionState(),
     )
+    return register_session(deps)

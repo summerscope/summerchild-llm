@@ -32,7 +32,6 @@ def configure(*, service_name: str = "summerchild-agent") -> bool:
     """
     try:
         import logfire
-        from pydantic_ai import InstrumentationSettings
     except ImportError as exc:
         log.warning("Logfire imports failed: %s. Running without instrumentation.", exc)
         return False
@@ -53,10 +52,21 @@ def configure(*, service_name: str = "summerchild-agent") -> bool:
         )
         return False
 
-    # Content-stripping instrumentation — agent inputs/outputs are scrubbed
-    # before reaching Logfire. The agent still sees full content to do its job.
-    instr = InstrumentationSettings(include_content=False)
-    logfire.instrument_pydantic_ai(instrumentation_settings=instr)
+    # Whether prompts / completions / tool args / tool results reach Logfire.
+    # Default ON for dev (so you can actually read the conversation in traces);
+    # set LOGFIRE_INCLUDE_CONTENT=false for prod / shared environments to
+    # restore the privacy posture from AGENT_CONTRACT.md.
+    include_content = os.environ.get("LOGFIRE_INCLUDE_CONTENT", "true").lower() not in (
+        "false",
+        "0",
+        "no",
+        "off",
+    )
+    logfire.instrument_pydantic_ai(include_content=include_content)
+    log.info(
+        "PydanticAI instrumentation: include_content=%s (override with LOGFIRE_INCLUDE_CONTENT).",
+        include_content,
+    )
 
     log.info(
         "Logfire instrumentation active for service=%s (auth via %s).",
