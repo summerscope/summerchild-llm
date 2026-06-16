@@ -59,7 +59,7 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
 
   if (!state) {
     return (
-      <div className="text-sm text-zinc-500">
+      <div className="text-sm text-zinc-700 dark:text-zinc-300">
         Waiting for the conversation to begin…
       </div>
     );
@@ -72,9 +72,9 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
       : 0;
 
   return (
-    <div className="space-y-6 text-sm text-zinc-700 dark:text-zinc-300">
+    <div className="space-y-6 text-sm text-zinc-900 dark:text-zinc-50">
       <section>
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-200">
           Phase
         </h2>
         <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -84,7 +84,7 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
       </section>
 
       <section>
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-200">
           Calibration
         </h2>
         <dl className="space-y-1">
@@ -102,7 +102,7 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
       </section>
 
       <section>
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-200">
           Questions
         </h2>
         <dl className="space-y-1">
@@ -126,11 +126,11 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
       </section>
 
       <section>
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-200">
           Shift budget
         </h2>
         <div className="space-y-2">
-          <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800">
+          <div className="h-2 w-full rounded-full bg-zinc-300 dark:bg-zinc-700">
             <div
               className={`h-2 rounded-full ${
                 budgetPct > 90
@@ -168,7 +168,7 @@ export function ScoreSidebar({ conversationId }: { conversationId: string }) {
 
       {state.pending_question_id && (
         <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-700 dark:text-zinc-200">
             Pending
           </h2>
           <p className="font-mono text-xs">{state.pending_question_id}</p>

@@ -24,7 +24,7 @@ export default function Home() {
   if (!conversationId) {
     return (
       <main className="flex h-dvh items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <p className="text-zinc-500">Loading…</p>
+        <p className="text-zinc-700 dark:text-zinc-300">Loading…</p>
       </main>
     );
   }
@@ -32,18 +32,18 @@ export default function Home() {
   return (
     <main className="grid h-dvh grid-cols-1 bg-zinc-50 dark:bg-zinc-950 md:grid-cols-[1fr_320px]">
       <div className="flex h-dvh flex-col overflow-hidden">
-        <header className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-          <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <header className="border-b border-zinc-300 px-6 py-4 dark:border-zinc-700">
+          <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             Sweet Summer Child Score
           </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-zinc-700 dark:text-zinc-300">
             Conversational risk assessment for automated decision systems
           </p>
         </header>
         <TransparencyBlurb />
         <Chat conversationId={conversationId} onStateChange={setHasState} />
       </div>
-      <aside className="hidden border-l border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 md:block">
+      <aside className="hidden border-l border-zinc-300 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 md:block">
         <ScoreSidebar conversationId={conversationId} />
       </aside>
     </main>
