@@ -1,14 +1,18 @@
 """
 Logfire instrumentation setup.
 
-Configures Logfire if a token is present. With `include_content=False` on
-PydanticAI instrumentation, prompts / completions / tool args / tool results
-are scrubbed before they leave the agent process — that's the first layer
-of the privacy posture.
+Tries `logfire.configure()` regardless of whether `LOGFIRE_TOKEN` is in env
+— the SDK auto-discovers credentials from either the env var OR local
+`~/.logfire` credentials placed there by `uv run logfire auth`. This means
+dev (OAuth) and prod (write token) both work without code changes.
 
-When `LOGFIRE_TOKEN` isn't set, this module is a no-op: the agent runs
-without external instrumentation and managed variables fall back to
-hard-coded defaults from `managed_vars.py`.
+With `include_content=False` on PydanticAI instrumentation, prompts /
+completions / tool args / tool results are scrubbed before they leave the
+agent process — first layer of the privacy posture.
+
+If Logfire isn't reachable at all (no creds anywhere), `logfire.configure()`
+no-ops with a stderr notice and the agent still boots — we just don't get
+traces.
 """
 
 from __future__ import annotations
@@ -20,18 +24,12 @@ log = logging.getLogger(__name__)
 
 
 def configure(*, service_name: str = "summerchild-agent") -> bool:
-    """Configure Logfire + PydanticAI auto-instrumentation if a token is present.
+    """Configure Logfire + PydanticAI auto-instrumentation.
 
-    Returns True if Logfire is active. The server boots either way.
+    Returns True if instrumentation was wired (regardless of whether the
+    SDK actually found credentials — that's its own concern). The server
+    boots either way.
     """
-    token = os.environ.get("LOGFIRE_TOKEN")
-    if not token:
-        log.warning(
-            "LOGFIRE_TOKEN not set — running without Logfire instrumentation. "
-            "Managed variables fall back to hard-coded defaults in managed_vars.py."
-        )
-        return False
-
     try:
         import logfire
         from pydantic_ai import InstrumentationSettings
@@ -39,17 +37,32 @@ def configure(*, service_name: str = "summerchild-agent") -> bool:
         log.warning("Logfire imports failed: %s. Running without instrumentation.", exc)
         return False
 
-    logfire.configure(
-        service_name=service_name,
-        scrubbing=logfire.ScrubbingOptions(),  # default regex scrubber for secrets/PII
-        # Token is read from LOGFIRE_TOKEN env var automatically.
-    )
+    has_token = bool(os.environ.get("LOGFIRE_TOKEN"))
+    auth_source = "LOGFIRE_TOKEN env var" if has_token else "local OAuth credentials (logfire auth)"
+
+    try:
+        logfire.configure(
+            service_name=service_name,
+            scrubbing=logfire.ScrubbingOptions(),  # default regex scrubber for secrets/PII
+            # Token is read from LOGFIRE_TOKEN env var automatically if present;
+            # otherwise the SDK falls back to `~/.logfire` credentials.
+        )
+    except Exception as exc:  # noqa: BLE001 — broad: instrumentation must not crash boot
+        log.warning(
+            "logfire.configure() raised %s. Running without instrumentation.", exc
+        )
+        return False
+
     # Content-stripping instrumentation — agent inputs/outputs are scrubbed
     # before reaching Logfire. The agent still sees full content to do its job.
     instr = InstrumentationSettings(include_content=False)
     logfire.instrument_pydantic_ai(instrumentation_settings=instr)
 
-    log.info("Logfire instrumentation active for service=%s.", service_name)
+    log.info(
+        "Logfire instrumentation active for service=%s (auth via %s).",
+        service_name,
+        auth_source,
+    )
     return True
 
 
@@ -59,5 +72,5 @@ def instrument_fastapi(app) -> None:
         import logfire
 
         logfire.instrument_fastapi(app)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — broad: instrumentation is best-effort
         log.debug("FastAPI instrumentation skipped: %s", exc)
