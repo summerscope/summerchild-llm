@@ -28,7 +28,7 @@ from pydantic_ai.tools import ToolDefinition
 from pydantic_ai_harness.logfire import ManagedPrompt  # noqa: E402
 
 from .budget import BudgetExceeded
-from .managed_vars import DEFAULT_SYSTEM_PROMPT, default_agent_bounds
+from .managed_vars import DEFAULT_SYSTEM_PROMPT, build_model, default_agent_bounds
 from .models import (
     AgentAddedQuestion,
     Answer,
@@ -45,7 +45,6 @@ from .models import (
 )
 from .rubric import Rubric
 from .state import (
-    AgentDeps,
     SessionDeps,
     SessionState,
     get_runtime,
@@ -59,26 +58,22 @@ from .state import (
 
 _BOUNDS = default_agent_bounds()
 
-# `deps` is the flat `AgentDeps` Pydantic model carrying the session_id
-# plus the bound numbers as flat primitives. The session_id keys the
-# runtime store where the heavy mutable `SessionDeps` actually lives —
-# tools resolve it via `_deps(ctx)`. The bound numbers are flat so
-# `ManagedPrompt(render_template=True)` can substitute `{{shift_budget_percent}}`
-# etc. against `ctx.deps` directly via Handlebars.
-agent: Agent[AgentDeps, str] = Agent(
-    _BOUNDS.model_id,
-    deps_type=AgentDeps,
+# `deps` is the plain session_id string. It keys the runtime store where the
+# heavy mutable `SessionDeps` actually lives — tools resolve it via `_deps(ctx)`.
+# The session-bound numbers referenced in the persona prompt
+# (`agent_shift_budget_fraction`, `agent_soft_question_target`,
+# `agent_hard_question_cap`) are resolved server-side by Logfire via `@{var}@`
+# references in the prompt body, not via Handlebars against `ctx.deps`.
+agent: Agent[str, str] = Agent(
+    build_model(),
+    deps_type=str,
     output_type=str,
-    # Persona prompt is now resolved per-run by the `ManagedPrompt` capability
-    # below — replaces the previous `@agent.system_prompt def _persona`
-    # callback. `prompt__agent_system` is auto-created in Logfire on first
-    # resolve; edits in the UI take effect on the next run.
+    # Persona prompt is resolved per-run by the `ManagedPrompt` capability —
+    # replaces the previous `@agent.system_prompt def _persona` callback.
+    # `prompt__agent_system` is auto-created in Logfire on first resolve;
+    # edits in the UI take effect on the next run.
     capabilities=[
-        ManagedPrompt(
-            name="agent_system",
-            default=DEFAULT_SYSTEM_PROMPT,
-            render_template=True,
-        ),
+        ManagedPrompt(name="agent_system", default=DEFAULT_SYSTEM_PROMPT),
     ],
     # Give the agent multiple shots to recover from validation errors —
     # e.g. when it guesses an answer key that isn't in the rubric. With the
@@ -88,9 +83,9 @@ agent: Agent[AgentDeps, str] = Agent(
 )
 
 
-def _deps(ctx: RunContext[AgentDeps]) -> SessionDeps:
-    """Resolve the live SessionDeps from the AgentDeps-typed `ctx.deps`."""
-    return get_runtime(ctx.deps.session_id)
+def _deps(ctx: RunContext[str]) -> SessionDeps:
+    """Resolve the live SessionDeps from the session_id in `ctx.deps`."""
+    return get_runtime(ctx.deps)
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +94,7 @@ def _deps(ctx: RunContext[AgentDeps]) -> SessionDeps:
 
 
 @agent.system_prompt
-def _state_summary(ctx: RunContext[AgentDeps]) -> str:
+def _state_summary(ctx: RunContext[str]) -> str:
     s = _deps(ctx).state
     b = _deps(ctx).budget
     asked_total = len(s.asked_canonical_ids) + len(s.added_questions)
@@ -137,7 +132,7 @@ def _state_summary(ctx: RunContext[AgentDeps]) -> str:
 def _phase_is(phase: int):
     """Build a `prepare=` callback that exposes a tool only in the given phase."""
 
-    async def gate(ctx: RunContext[AgentDeps], td: ToolDefinition) -> ToolDefinition | None:
+    async def gate(ctx: RunContext[str], td: ToolDefinition) -> ToolDefinition | None:
         if _deps(ctx).state.phase != phase:
             return None
         # Once finalised, no more tools.
@@ -221,7 +216,7 @@ class AddAgentQuestionArgs(BaseModel):
 
 
 @agent.tool(prepare=_phase_is(1))
-def lookup_canonical(ctx: RunContext[AgentDeps], args: LookupCanonicalArgs) -> str:
+def lookup_canonical(ctx: RunContext[str], args: LookupCanonicalArgs) -> str:
     """Inspect a canonical question's text + valid answer keys WITHOUT asking it.
 
     Use before `infer_from_braindump` so you can pass an answer key that
@@ -243,7 +238,7 @@ def lookup_canonical(ctx: RunContext[AgentDeps], args: LookupCanonicalArgs) -> s
 
 
 @agent.tool(prepare=_phase_is(1))
-def ask_canonical(ctx: RunContext[AgentDeps], args: AskCanonicalArgs) -> str:
+def ask_canonical(ctx: RunContext[str], args: AskCanonicalArgs) -> str:
     """Stage a canonical question to be asked of the user this turn.
 
     Records the ask in the session log + budget. Your text output for this
@@ -277,7 +272,7 @@ def ask_canonical(ctx: RunContext[AgentDeps], args: AskCanonicalArgs) -> str:
 
 
 @agent.tool(prepare=_phase_is(1))
-def skip_canonical(ctx: RunContext[AgentDeps], args: SkipCanonicalArgs) -> str:
+def skip_canonical(ctx: RunContext[str], args: SkipCanonicalArgs) -> str:
     """Skip a canonical question. Free — does not consume shift budget."""
     qid = args.question_id
     if qid not in _deps(ctx).rubric:
@@ -290,7 +285,7 @@ def skip_canonical(ctx: RunContext[AgentDeps], args: SkipCanonicalArgs) -> str:
 
 @agent.tool(prepare=_phase_is(1))
 def infer_from_braindump(
-    ctx: RunContext[AgentDeps], args: InferFromBraindumpArgs
+    ctx: RunContext[str], args: InferFromBraindumpArgs
 ) -> str:
     """Record an inferred canonical answer extracted from the user's braindump.
 
@@ -315,7 +310,7 @@ def infer_from_braindump(
 
 @agent.tool(prepare=_phase_is(1))
 def record_user_answer(
-    ctx: RunContext[AgentDeps], args: RecordUserAnswerArgs
+    ctx: RunContext[str], args: RecordUserAnswerArgs
 ) -> str:
     """Record the user's answer to the currently-pending question."""
     qid = args.question_id
@@ -349,7 +344,7 @@ def record_user_answer(
 
 @agent.tool(prepare=_phase_is(1))
 def add_agent_question(
-    ctx: RunContext[AgentDeps], args: AddAgentQuestionArgs
+    ctx: RunContext[str], args: AddAgentQuestionArgs
 ) -> str:
     """Add a new agent-authored question and stage it as the pending ask.
 
@@ -406,7 +401,7 @@ def add_agent_question(
 
 
 @agent.tool(prepare=_phase_is(1))
-def end_phase_1(ctx: RunContext[AgentDeps]) -> str:
+def end_phase_1(ctx: RunContext[str]) -> str:
     """End Phase 1 (conversation) and enter Phase 2 (re-weight + playback).
 
     Call this when you have enough signal OR when the question cap is hit.
@@ -481,7 +476,7 @@ class RecordCorrectionArgs(BaseModel):
 
 
 @agent.tool(prepare=_phase_is(2))
-def de_weight(ctx: RunContext[AgentDeps], args: DeWeightArgs) -> str:
+def de_weight(ctx: RunContext[str], args: DeWeightArgs) -> str:
     """De-weight a canonical question. Cost = drop in its max-possible contribution."""
     qid = args.question_id
     if qid not in _deps(ctx).rubric:
@@ -521,7 +516,7 @@ def de_weight(ctx: RunContext[AgentDeps], args: DeWeightArgs) -> str:
 
 
 @agent.tool(prepare=_phase_is(2))
-def present_playback(ctx: RunContext[AgentDeps], args: PresentPlaybackArgs) -> str:
+def present_playback(ctx: RunContext[str], args: PresentPlaybackArgs) -> str:
     """Record the playback bullets to be shown to the user.
 
     Your text output this turn should render the bullets and end with a
@@ -549,7 +544,7 @@ def present_playback(ctx: RunContext[AgentDeps], args: PresentPlaybackArgs) -> s
 
 @agent.tool(prepare=_phase_is(2))
 def record_correction(
-    ctx: RunContext[AgentDeps], args: RecordCorrectionArgs
+    ctx: RunContext[str], args: RecordCorrectionArgs
 ) -> str:
     """Record a user correction during playback. Updates answers_given."""
     qid = args.question_id
@@ -576,7 +571,7 @@ def record_correction(
 
 
 @agent.tool(prepare=_phase_is(2))
-def finalise(ctx: RunContext[AgentDeps]) -> str:
+def finalise(ctx: RunContext[str]) -> str:
     """Build the FinalReport and commit it. Call this once playback is done."""
     if not _deps(ctx).state.playback_presented and not _deps(ctx).state.playback_skipped:
         raise ModelRetry(

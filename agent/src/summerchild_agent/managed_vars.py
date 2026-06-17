@@ -261,3 +261,23 @@ def default_agent_bounds() -> AgentBounds:
         hard_question_cap=HARD_QUESTION_CAP_VAR.get().value,
         model_id=MODEL_ID_VAR.get().value,
     )
+
+
+def build_model() -> str:
+    """Return the PydanticAI model identifier the agent (and evals) should use.
+
+    When `PYDANTIC_AI_GATEWAY_API_KEY` (or `PAIG_API_KEY`) is set, prefixes the
+    managed `agent_model_id` with `gateway/` so PydanticAI routes through the
+    Pydantic AI Gateway — every request shows up under the Logfire Gateway tab
+    and we can A/B routing groups from the UI. Base URL is inferred from the
+    `pylf_v2_<region>_...` key, so no extra config needed.
+
+    Without the env var, returns the raw `provider:model` for direct routing —
+    useful for local dev when you don't want gateway round-trips.
+    """
+    model_id = MODEL_ID_VAR.get().value
+    if model_id.startswith("gateway/"):
+        return model_id
+    if os.environ.get("PYDANTIC_AI_GATEWAY_API_KEY") or os.environ.get("PAIG_API_KEY"):
+        return f"gateway/{model_id}"
+    return model_id
